@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: E-Gate-2.0
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: e-gate
+server:
+  port: 8080
