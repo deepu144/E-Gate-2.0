@@ -3,6 +3,7 @@ package com.kce.egate.controller.controllerImpl;
 import com.kce.egate.constant.Constant;
 import com.kce.egate.controller.AdminController;
 import com.kce.egate.enumeration.ResponseStatus;
+import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 
 @RestController
@@ -22,6 +25,7 @@ public class AdminControllerImpl implements AdminController {
     private final AdminService adminService;
 
     @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/")
     public ResponseEntity<CommonResponse> getAllEntry(@RequestParam(required = false) String rollNumber,
                                                       @RequestParam(required = false) LocalDate fromDate,
@@ -41,17 +45,19 @@ public class AdminControllerImpl implements AdminController {
     }
 
     @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/batch/add/")
-    public ResponseEntity<CommonResponse> addBatch(String batch) {
+    public ResponseEntity<CommonResponse> addBatch(@RequestParam String batch , @RequestParam("file")MultipartFile multipartFile) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.addBatch(batch));
-        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.addBatch(batch,multipartFile));
+        }catch (Exception e) {
             LOGGER.error("** addBatch : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
 
     @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/batch")
     public ResponseEntity<CommonResponse> getAllBatch() {
         try {
@@ -63,12 +69,23 @@ public class AdminControllerImpl implements AdminController {
     }
 
     @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("batch")
     public ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch){
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(adminService.deleteBatch(batch));
-        }catch (Exception e){
+        }catch (Exception e) {
             LOGGER.error("** deleteBatch : {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
+    @PutMapping("/pwd/change")
+    public ResponseEntity<CommonResponse> changeAdminPassword(@RequestBody PasswordChangeRequest passwordChangeRequest){
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.changeAdminPassword(passwordChangeRequest));
+        }catch (Exception e){
+            LOGGER.error("** changeAdminPassword : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }

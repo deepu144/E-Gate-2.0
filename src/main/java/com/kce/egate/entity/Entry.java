@@ -1,5 +1,6 @@
 package com.kce.egate.entity;
 
+import com.kce.egate.enumeration.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,25 +1,37 @@
 package com.kce.egate.service.serviceImpl;
 
 import com.kce.egate.constant.Constant;
-import com.kce.egate.entity.Batch;
-import com.kce.egate.entity.BatchEntry;
-import com.kce.egate.entity.Entry;
-import com.kce.egate.entity.Status;
+import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.ResponseStatus;
+import com.kce.egate.enumeration.Status;
 import com.kce.egate.repository.BatchRepository;
 import com.kce.egate.repository.EntryRepository;
+import com.kce.egate.repository.UserRepository;
+import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.BatchObject;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.response.EntryObject;
 import com.kce.egate.response.ListResponse;
 import com.kce.egate.service.AdminService;
+import com.kce.egate.util.FileUtils;
 import com.kce.egate.util.Mapper;
+import com.kce.egate.util.exceptions.DuplicateInformationFoundException;
 import com.kce.egate.util.exceptions.InvalidFilterException;
+import com.kce.egate.util.exceptions.PasswordNotMatchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.management.InvalidAttributeValueException;
+import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.security.InvalidParameterException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -31,6 +43,8 @@ public class AdminServiceImpl implements AdminService {
     private final EntryRepository entryRepository;
     private final MongoTemplate mongoTemplate;
     private final BatchRepository batchRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     @Override
     public CommonResponse getAllEntry(
@@ -128,11 +142,11 @@ public class AdminServiceImpl implements AdminService {
         Optional<Entry> optionalEntry = entryRepository.findByRollNumber(rollNumber);
         if(optionalEntry.isPresent()){
             Entry entry = optionalEntry.get();
-            if(fromDate !=null){
+            if(fromDate !=null) {
                 if(entry.getOutDate().isEqual(fromDate) || entry.getOutDate().isEqual(toDate) || (entry.getOutDate().isAfter(fromDate) && entry.getOutDate().isBefore(toDate))){
                     entryObjects.add(Mapper.convertToEntryObject(entry));
                 }
-            }else{
+            }else {
                 entryObjects.add(Mapper.convertToEntryObject(entry));
             }
         }
@@ -245,7 +259,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public CommonResponse addBatch(String batchName) {
+    public CommonResponse addBatch(String batchName, MultipartFile multipartFile) throws DuplicateInformationFoundException, IOException {
         if(batchRepository.existsByBatchName(batchName)){
             throw new InvalidParameterException(Constant.DUPLICATE_BATCH_FOUND);
         }
@@ -255,6 +269,9 @@ public class AdminServiceImpl implements AdminService {
         if(!(batchName.charAt(8)=='-')){
             throw new InvalidParameterException(Constant.INVALID_BATCH);
         }
+        Set<BatchInformation> batchInformationList = FileUtils.uploadBatchInformation(multipartFile);
+        String batchInformation = batchName+"_Information";
+        mongoTemplate.insert(batchInformationList,batchInformation);
         Batch batch = new Batch();
         batch.setUniqueId(UUID.randomUUID().toString());
         batch.setBatchName(batchName);
@@ -267,7 +284,6 @@ public class AdminServiceImpl implements AdminService {
                 .successMessage(Constant.BATCH_ADD_SUCCESS)
                 .build();
     }
-
     @Override
     public CommonResponse getAllBatch() {
         List<Batch> batchList = batchRepository.findAll();
@@ -305,6 +321,30 @@ public class AdminServiceImpl implements AdminService {
                 .data(batchName)
                 .build();
     }
+
+    @Override
+    public CommonResponse changeAdminPassword(PasswordChangeRequest passwordChangeRequest) throws InvalidObjectException, PasswordNotMatchException, InvalidAttributeValueException {
+        if(passwordChangeRequest.getNewPassword().length()<8){
+            throw new InvalidAttributeValueException(Constant.PASSWORD_SIZE_NOT_MATCH);
+        }
+        Optional<User> userOptional = userRepository.findByEmail(passwordChangeRequest.getEmail());
+        if(userOptional.isEmpty()){
+            throw new InvalidObjectException(Constant.USER_NOT_FOUND);
+        }
+        User user = userOptional.get();
+        if(!passwordEncoder.matches(passwordChangeRequest.getOldPassword(), user.getPassword())){
+            throw new PasswordNotMatchException(Constant.PASSWORD_NOT_MATCH);
+        }
+        user.setPassword(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
+        userRepository.save(user);
+        return CommonResponse.builder()
+                .code(200)
+                .successMessage(Constant.PASSWORD_CHANGED_SUCCESS)
+                .data(null)
+                .status(ResponseStatus.UPDATED)
+                .build();
+    }
+
     public int floorBinarySearch(List<LocalDate> inDateList, LocalDate fromDate) {
         int low = 0;
         int high = inDateList.size() - 1;

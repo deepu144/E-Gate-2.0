@@ -1,12 +1,11 @@
 package com.kce.egate.service.serviceImpl;
 
 import com.kce.egate.constant.Constant;
-import com.kce.egate.entity.Batch;
-import com.kce.egate.entity.BatchEntry;
-import com.kce.egate.entity.Entry;
-import com.kce.egate.entity.Status;
+import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.ResponseStatus;
+import com.kce.egate.enumeration.Status;
 import com.kce.egate.repository.BatchRepository;
+import com.kce.egate.repository.DailyUtilsRepository;
 import com.kce.egate.repository.EntryRepository;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.EntryService;
@@ -30,6 +29,7 @@ public class EntryServiceImpl implements EntryService {
     private final EntryRepository entryRepository;
     private final MongoTemplate mongoTemplate;
     private final BatchRepository batchRepository;
+    private final DailyUtilsRepository dailyUtilsRepository;
 
     @Override
     public CommonResponse addOrUpdateEntry(String rollNumber) throws InvalidBatchException, InvalidAttributeValueException {
@@ -37,13 +37,18 @@ public class EntryServiceImpl implements EntryService {
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
         Optional<Entry> optionalEntry = entryRepository.findByRollNumber(rollNumber);
-        String batch = getCollection(rollNumber);
+        String batch;
+        if(rollNumber.length()==5){
+            batch = "Staff";
+        }else{
+            batch = getCollection(rollNumber);
+        }
         if(optionalEntry.isEmpty()){
             List<String> batchList = batchRepository.findAll()
                     .parallelStream()
                     .map(Batch::getBatchName)
                     .toList();
-            if(!batchList.contains(batch)){
+            if(!batchList.contains(batch)) {
                 throw new InvalidBatchException(Constant.INVALID_BATCH);
             }
             Entry entry = new Entry();
@@ -54,8 +59,9 @@ public class EntryServiceImpl implements EntryService {
             entry.setOutDate(LocalDate.now());
             entry.setOutTime(LocalTime.now());
             entryRepository.save(entry);
+            updateTodayUtils(true);
             return CommonResponse.builder()
-                    .data(rollNumber)
+                    .data(rollNumber)  // data can be changed later with his/her information
                     .successMessage(Constant.ENTRY_CREATED_SUCCESS)
                     .status(ResponseStatus.SUCCESS)
                     .code(200)
@@ -89,12 +95,77 @@ public class EntryServiceImpl implements EntryService {
             mongoTemplate.findAndModify(updateQuery, update, BatchEntry.class, batch);
         }
         entryRepository.delete(entry);
+        updateTodayUtils(false);
         return CommonResponse.builder()
-                .data(rollNumber)
+                .data(rollNumber)   // data can be changed later with his/her information
                 .successMessage(Constant.ENTRY_DELETED_SUCCESS)
                 .status(ResponseStatus.SUCCESS)
                 .code(200)
                 .build();
+    }
+
+    @Override
+    public CommonResponse getTodayInCount() {
+        Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
+        if(dailyUtilsOptional.isEmpty()){
+            return CommonResponse.builder()
+                    .code(200)
+                    .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
+                    .status(ResponseStatus.SUCCESS)
+                    .data(0)
+                    .build();
+        }
+        return CommonResponse.builder()
+                .code(200)
+                .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
+                .status(ResponseStatus.SUCCESS)
+                .data(dailyUtilsOptional.get().getInCount())
+                .build();
+    }
+
+    @Override
+    public CommonResponse getTodayOutCount() {
+        Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
+        if(dailyUtilsOptional.isEmpty()){
+            return CommonResponse.builder()
+                    .code(200)
+                    .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
+                    .status(ResponseStatus.SUCCESS)
+                    .data(0)
+                    .build();
+        }
+        return CommonResponse.builder()
+                .code(200)
+                .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
+                .status(ResponseStatus.SUCCESS)
+                .data(dailyUtilsOptional.get().getOutCount())
+                .build();
+    }
+
+    private void updateTodayUtils(boolean check) {
+        LocalDate today = LocalDate.now();
+        Optional<DailyUtils> utilsOptional = dailyUtilsRepository.findByToday(today);
+        DailyUtils dailyUtils;
+        if(utilsOptional.isPresent()){
+            dailyUtils = utilsOptional.get();
+            if(check){
+                dailyUtils.setOutCount(dailyUtils.getOutCount()+1);
+            }else{
+                dailyUtils.setInCount(dailyUtils.getInCount()+1);
+            }
+        }else{
+            dailyUtils = new DailyUtils();
+            dailyUtils.setUniqueId(UUID.randomUUID().toString());
+            dailyUtils.setToday(today);
+            if(check){
+                dailyUtils.setOutCount(1L);
+                dailyUtils.setInCount(0L);
+            }else{
+                dailyUtils.setOutCount(0L);
+                dailyUtils.setInCount(1L);
+            }
+        }
+        dailyUtilsRepository.save(dailyUtils);
     }
 
     public static String getCollection(String rollNumber) {

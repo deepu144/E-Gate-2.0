@@ -1,6 +1,6 @@
 package com.kce.egate.response;
 
-import com.kce.egate.entity.Status;
+import com.kce.egate.enumeration.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

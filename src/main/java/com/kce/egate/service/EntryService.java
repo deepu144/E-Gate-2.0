@@ -7,4 +7,8 @@ import javax.management.InvalidAttributeValueException;
 
 public interface EntryService {
     CommonResponse addOrUpdateEntry(String rollNumber) throws InvalidBatchException, InvalidAttributeValueException;
+
+    CommonResponse getTodayInCount();
+
+    CommonResponse getTodayOutCount();
 }

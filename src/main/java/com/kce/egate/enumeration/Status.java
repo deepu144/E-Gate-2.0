@@ -1,4 +1,4 @@
-package com.kce.egate.entity;
+package com.kce.egate.enumeration;
 
 public enum Status {
     IN,

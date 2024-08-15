@@ -1,11 +1,11 @@
 package com.kce.egate.controller;
 
+import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.CommonResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDate;
 
 public interface AdminController {
@@ -20,9 +20,11 @@ public interface AdminController {
                                                @RequestParam int size
     );
     @PostMapping("/batch/add")
-    ResponseEntity<CommonResponse> addBatch(@RequestParam String batch);
+    ResponseEntity<CommonResponse> addBatch(@RequestParam String batch, @RequestParam("file") MultipartFile multipartFile);
     @GetMapping("/batch")
     ResponseEntity<CommonResponse> getAllBatch();
-    @DeleteMapping("batch")
+    @DeleteMapping("/batch")
     ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch);
+    @PutMapping("/pwd/change")
+    ResponseEntity<CommonResponse> changeAdminPassword(@RequestBody PasswordChangeRequest passwordChangeRequest);
 }

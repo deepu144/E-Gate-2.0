@@ -30,6 +30,27 @@ public class EntryControllerImpl implements EntryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
+
+    @GetMapping("/inCount")
+    public ResponseEntity<CommonResponse> getTodayInCount(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayInCount());
+        }catch (Exception e){
+            LOG.error("** getTodayInCount : {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
+    @GetMapping("/outCount")
+    public ResponseEntity<CommonResponse> getTodayOutCount(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayOutCount());
+        }catch (Exception e){
+            LOG.error("** getTodayOutCount : {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
     public CommonResponse setServerError(Exception e){
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setCode(500);
