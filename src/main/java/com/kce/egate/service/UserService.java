@@ -14,14 +14,8 @@ public interface UserService {
     CommonResponse signInUser(AuthenticationRequest authenticationRequest);
     CommonResponse oauth2Callback(String email,String name,String picture,String id) throws IllegalAccessException;
     CommonResponse logout(HttpServletRequest request);
-
     CommonResponse addAdmin(String email) throws InvalidEmailException;
-
     CommonResponse forgotPassword(String email) throws UserNotFoundException;
-
     CommonResponse verifyOtp(VerifyOTPRequest request) throws UserNotFoundException, IllegalAccessException, InvalidAttributeValueException;
-
     CommonResponse changePassword(String uniqueId, PasswordChangeOTPRequest request) throws IllegalAccessException, UserNotFoundException;
-
-    CommonResponse resendOtp(String email);
 }
