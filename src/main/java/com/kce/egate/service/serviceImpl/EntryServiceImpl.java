@@ -8,8 +8,10 @@ import com.kce.egate.repository.BatchRepository;
 import com.kce.egate.repository.DailyUtilsRepository;
 import com.kce.egate.repository.EntryRepository;
 import com.kce.egate.response.CommonResponse;
+import com.kce.egate.response.EntryResponse;
 import com.kce.egate.service.EntryService;
 import com.kce.egate.util.exceptions.InvalidBatchException;
+import com.mongodb.client.MongoClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -30,7 +32,6 @@ public class EntryServiceImpl implements EntryService {
     private final MongoTemplate mongoTemplate;
     private final BatchRepository batchRepository;
     private final DailyUtilsRepository dailyUtilsRepository;
-
     @Override
     public CommonResponse addOrUpdateEntry(String rollNumber) throws InvalidBatchException, InvalidAttributeValueException {
         if(rollNumber.length()<5){
@@ -42,6 +43,12 @@ public class EntryServiceImpl implements EntryService {
             batch = "Staff";
         }else{
             batch = getCollection(rollNumber);
+        }
+        Query queryForBatchInformation = new Query();
+        queryForBatchInformation.addCriteria(Criteria.where("rollNumber").is(rollNumber));
+        BatchInformation batchInformation = mongoTemplate.findOne(queryForBatchInformation, BatchInformation.class,batch);
+        if(batchInformation==null){
+            throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
         if(optionalEntry.isEmpty()){
             List<String> batchList = batchRepository.findAll()
@@ -60,8 +67,19 @@ public class EntryServiceImpl implements EntryService {
             entry.setOutTime(LocalTime.now());
             entryRepository.save(entry);
             updateTodayUtils(true);
+            EntryResponse entryResponse = EntryResponse.builder()
+                    .rollNumber(rollNumber)
+                    .name(batchInformation.getName())
+                    .dept(batchInformation.getDept())
+                    .status(Status.OUT)
+                    .batch(batch)
+                    .inDate(null)
+                    .outDate(entry.getOutDate())
+                    .inTime(null)
+                    .outTime(entry.getOutTime())
+                    .build();
             return CommonResponse.builder()
-                    .data(rollNumber)  // data can be changed later with his/her information
+                    .data(entryResponse)
                     .successMessage(Constant.ENTRY_CREATED_SUCCESS)
                     .status(ResponseStatus.SUCCESS)
                     .code(200)
@@ -94,10 +112,20 @@ public class EntryServiceImpl implements EntryService {
             update.push("outTimeList", entry.getOutTime());
             mongoTemplate.findAndModify(updateQuery, update, BatchEntry.class, batch);
         }
+        EntryResponse response = EntryResponse.builder()
+                .name(batchInformation.getName())
+                .rollNumber(rollNumber)
+                .batch(batch)
+                .dept(batchInformation.getDept())
+                .inDate(entry.getInDate())
+                .outDate(entry.getOutDate())
+                .inTime(entry.getInTime())
+                .outTime(entry.getOutTime())
+                .build();
         entryRepository.delete(entry);
         updateTodayUtils(false);
         return CommonResponse.builder()
-                .data(rollNumber)   // data can be changed later with his/her information
+                .data(response)
                 .successMessage(Constant.ENTRY_DELETED_SUCCESS)
                 .status(ResponseStatus.SUCCESS)
                 .code(200)
