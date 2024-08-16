@@ -2,8 +2,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username:
-    password:
+    username: deepaktmalai65@gmail.com
+    password: ntqw swdl ebuv nspm
     properties:
       mail:
         smtp:
@@ -15,7 +15,7 @@ spring:
       client:
         registration:
           google:
-            client-id:
-            client-secret:
+            client-id: 597444873685-aek3u7ngvm6bknsvj6v5h7gdik32pihb.apps.googleusercontent.com
+            client-secret: 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
   profiles:
     active: dev

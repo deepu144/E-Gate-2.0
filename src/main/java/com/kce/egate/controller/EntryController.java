@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 public interface EntryController {
-    @PostMapping("/addEntry")
+    @PostMapping("/add")
     ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam  String rollNumber);
     @GetMapping("/inCount")
     ResponseEntity<CommonResponse> getTodayInCount();
