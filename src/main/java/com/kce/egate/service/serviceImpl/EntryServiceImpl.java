@@ -11,7 +11,6 @@ import com.kce.egate.response.CommonResponse;
 import com.kce.egate.response.EntryResponse;
 import com.kce.egate.service.EntryService;
 import com.kce.egate.util.exceptions.InvalidBatchException;
-import com.mongodb.client.MongoClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
