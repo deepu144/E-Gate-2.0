@@ -34,14 +34,13 @@ public class SecurityConfig {
     private final UserDetailService userDetailService;
     private final JWTAuthFilter jwtAuthFilter;
     private final PasswordEncoder passwordEncoder;
-    private final UserRepository userRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/auth/**","/oauth2/**","/login","/swagger-ui/**","/v3/api-docs/**")
+                        .requestMatchers("/auth/**","/oauth2/**","/swagger-ui/**","/v3/api-docs/**","/kce/entry/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated()

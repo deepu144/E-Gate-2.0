@@ -4,22 +4,30 @@ import com.kce.egate.constant.Constant;
 import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.ResponseStatus;
 import com.kce.egate.enumeration.Status;
-import com.kce.egate.repository.BatchRepository;
-import com.kce.egate.repository.DailyUtilsRepository;
-import com.kce.egate.repository.EntryRepository;
+import com.kce.egate.repository.*;
+import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.response.EntryResponse;
 import com.kce.egate.service.EntryService;
+import com.kce.egate.util.JWTUtils;
 import com.kce.egate.util.exceptions.InvalidBatchException;
+import com.kce.egate.util.exceptions.InvalidJWTTokenException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import javax.management.InvalidAttributeValueException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,8 +39,14 @@ public class EntryServiceImpl implements EntryService {
     private final MongoTemplate mongoTemplate;
     private final BatchRepository batchRepository;
     private final DailyUtilsRepository dailyUtilsRepository;
+    private final AuthenticationManager authenticationManager;
+    private final JWTUtils jwtUtils;
+    private final UserRepository userRepository;
+    private final EntryLoginUtilsRepository loginUtilsRepository;
+
     @Override
-    public CommonResponse addOrUpdateEntry(String rollNumber) throws InvalidBatchException, InvalidAttributeValueException {
+    public CommonResponse addOrUpdateEntry(String rollNumber,String header) throws InvalidBatchException, InvalidAttributeValueException, InvalidJWTTokenException, IllegalAccessException {
+        authorizeToken(header);
         if(rollNumber.length()<5){
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
@@ -132,7 +146,8 @@ public class EntryServiceImpl implements EntryService {
     }
 
     @Override
-    public CommonResponse getTodayInCount() {
+    public CommonResponse getTodayInCount(String header) throws InvalidJWTTokenException, IllegalAccessException {
+        authorizeToken(header);
         Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
         if(dailyUtilsOptional.isEmpty()){
             return CommonResponse.builder()
@@ -150,8 +165,26 @@ public class EntryServiceImpl implements EntryService {
                 .build();
     }
 
+    private void authorizeToken(String header) throws InvalidJWTTokenException, IllegalAccessException {
+        if(header ==null || header.isBlank()){
+            throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
+        }
+        String token = header.substring(7);
+        if(!(jwtUtils.extractIssuer(token).equals("717822F110 717822P212"))){
+            throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
+        }
+        String uniqueId = jwtUtils.extractValue(token,"uniqueId");
+        if(!loginUtilsRepository.existsByUniqueId(uniqueId)){
+            throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
+        }
+        if(!jwtUtils.extractValue(token,"roles").equals("USER")){
+            throw new IllegalAccessException(ResponseStatus.UNAUTHORIZED.name());
+        }
+    }
+
     @Override
-    public CommonResponse getTodayOutCount() {
+    public CommonResponse getTodayOutCount(String header) throws InvalidJWTTokenException, IllegalAccessException {
+        authorizeToken(header);
         Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
         if(dailyUtilsOptional.isEmpty()){
             return CommonResponse.builder()
@@ -166,6 +199,46 @@ public class EntryServiceImpl implements EntryService {
                 .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
                 .status(ResponseStatus.SUCCESS)
                 .data(dailyUtilsOptional.get().getOutCount())
+                .build();
+    }
+
+    @Override
+    public CommonResponse userLogin(AuthenticationRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(userDetails.getUsername());
+        loginUtilsOptional.ifPresent(entryLoginUtils -> loginUtilsRepository.deleteById(entryLoginUtils.get_id()));
+        EntryLoginUtils loginUtils = new EntryLoginUtils();
+        loginUtils.setEmail(userDetails.getUsername());
+        String uniqueId = UUID.randomUUID().toString();
+        loginUtils.setUniqueId(uniqueId);
+        loginUtilsRepository.save(loginUtils);
+        HashMap<String,Object> claims = new HashMap<>();
+        claims.put("roles","USER");
+        claims.put("uniqueId",uniqueId);
+        String token = jwtUtils.generateUserToken(claims,userDetails);
+        return CommonResponse.builder()
+                .code(200)
+                .status(ResponseStatus.SUCCESS)
+                .data(token)
+                .successMessage(Constant.SIGN_IN_SUCCESS)
+                .build();
+    }
+
+    @Override
+    public CommonResponse userLogout(String email) throws IllegalAccessException {
+        Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(email);
+        if(loginUtilsOptional.isEmpty()){
+            throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
+        }
+        loginUtilsRepository.deleteById(loginUtilsOptional.get().get_id());
+        return CommonResponse.builder()
+                .code(200)
+                .status(ResponseStatus.SUCCESS)
+                .data(null)
+                .successMessage(Constant.LOGOUT_SUCCESS)
                 .build();
     }
 

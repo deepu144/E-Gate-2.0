@@ -3,8 +3,10 @@ package com.kce.egate.controller.controllerImpl;
 import com.kce.egate.constant.Constant;
 import com.kce.egate.controller.EntryController;
 import com.kce.egate.enumeration.ResponseStatus;
+import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.EntryService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +24,10 @@ public class EntryControllerImpl implements EntryController {
 
     @Override
     @PostMapping("/add")
-    public ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam String rollNumber){
+    public ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam String rollNumber,HttpServletRequest request){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.addOrUpdateEntry(rollNumber));
+            String header = request.getHeader("Authorization");
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.addOrUpdateEntry(rollNumber,header));
         }catch (Exception e){
             LOG.error("** addOrUpdateEntry : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
@@ -32,9 +35,10 @@ public class EntryControllerImpl implements EntryController {
     }
 
     @GetMapping("/inCount")
-    public ResponseEntity<CommonResponse> getTodayInCount(){
+    public ResponseEntity<CommonResponse> getTodayInCount(HttpServletRequest request){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayInCount());
+            String header = request.getHeader("Authorization");
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayInCount(header));
         }catch (Exception e){
             LOG.error("** getTodayInCount : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
@@ -42,11 +46,33 @@ public class EntryControllerImpl implements EntryController {
     }
 
     @GetMapping("/outCount")
-    public ResponseEntity<CommonResponse> getTodayOutCount(){
+    public ResponseEntity<CommonResponse> getTodayOutCount(HttpServletRequest request){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayOutCount());
+            String header = request.getHeader("Authorization");
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayOutCount(header));
         }catch (Exception e){
             LOG.error("** getTodayOutCount : {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogin(request));
+        }catch (Exception e){
+            LOG.error("** userLogin : {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
+    @Override
+    @GetMapping("/logout")
+    public ResponseEntity<CommonResponse> userLogout(String email){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(email));
+        }catch (Exception e){
+            LOG.error("** userLogout : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }

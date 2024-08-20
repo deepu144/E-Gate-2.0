@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Component
@@ -38,6 +39,15 @@ public class JWTUtils {
                     .compact();
     }
 
+    public String generateUserToken(HashMap<String, Object> claims, UserDetails userDetails){
+        return Jwts.builder()
+                .claims(claims)
+                .subject(userDetails.getUsername())
+                .issuer("717822F110 717822P212")
+                .signWith(Key)
+                .compact();
+    }
+
     public String generateToken(HashMap<String, Object> claims, String userName){
         return Jwts.builder()
                 .claims(claims)
@@ -50,6 +60,10 @@ public class JWTUtils {
 
     public String extractUsername(String token){
         return extractClaims(token, Claims::getSubject);
+    }
+
+    public String extractIssuer(String token){
+        return extractClaims(token, Claims::getIssuer);
     }
 
     private <T> T extractClaims(String token, Function<Claims, T> claimsTFunction){
@@ -69,5 +83,7 @@ public class JWTUtils {
     public boolean isTokenExpired(String token){
         return extractClaims(token, Claims::getExpiration).before(new Date());
     }
-
+    public String extractValue(String token,String key) {
+        return extractClaims(token, i->i.get(key)).toString();
+    }
 }

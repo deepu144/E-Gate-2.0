@@ -31,4 +31,5 @@ public final class Constant {
     public static final String ILLEGAL_ACCESS = "Illegal Access";
     public static final String INVALID_OTP = "OTP is Invalid";
     public static final String OTP_VERIFIED_SUCCESS = "OTP has been Validated and Verified Successfully!";
+    public static final String INVALID_JWT_TOKEN = "Invalid JWT Token";
 }
