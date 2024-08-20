@@ -1,6 +1,5 @@
 package com.kce.egate.config;
 
-import com.kce.egate.repository.UserRepository;
 import com.kce.egate.service.serviceImpl.UserDetailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

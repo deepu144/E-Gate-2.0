@@ -13,8 +13,6 @@ import com.kce.egate.util.JWTUtils;
 import com.kce.egate.util.exceptions.InvalidBatchException;
 import com.kce.egate.util.exceptions.InvalidJWTTokenException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -41,7 +39,6 @@ public class EntryServiceImpl implements EntryService {
     private final DailyUtilsRepository dailyUtilsRepository;
     private final AuthenticationManager authenticationManager;
     private final JWTUtils jwtUtils;
-    private final UserRepository userRepository;
     private final EntryLoginUtilsRepository loginUtilsRepository;
 
     @Override
