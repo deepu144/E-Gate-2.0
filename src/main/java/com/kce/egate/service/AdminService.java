@@ -3,6 +3,7 @@ package com.kce.egate.service;
 import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.util.exceptions.DuplicateInformationFoundException;
+import com.kce.egate.util.exceptions.InvalidEmailException;
 import com.kce.egate.util.exceptions.InvalidFilterException;
 import com.kce.egate.util.exceptions.PasswordNotMatchException;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,8 @@ public interface AdminService {
             String order,
             String orderBy
     ) throws InvalidFilterException;
+
+    CommonResponse addAdmin(String email) throws InvalidEmailException;
 
     CommonResponse addBatch(String batch, MultipartFile multipartFile) throws DuplicateInformationFoundException, IOException;
 

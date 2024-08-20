@@ -19,12 +19,9 @@ import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.UserService;
 import com.kce.egate.util.EmailUtils;
 import com.kce.egate.util.JWTUtils;
-import com.kce.egate.util.exceptions.InvalidEmailException;
 import com.kce.egate.util.exceptions.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.bcel.Const;
-import org.springdoc.core.service.RequestBodyService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,11 +29,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-
 import javax.management.InvalidAttributeValueException;
-import javax.swing.text.html.Option;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 
 @Service
@@ -49,8 +45,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final EmailUtils emailUtils;
     private final OtpInfoRepository otpInfoRepository;
-    private static final Long EXPIRE_TIME = 300000L;
     private final PasswordEncoder passwordEncoder;
+    private static final Long EXPIRE_TIME = 300000L;
 
     @Override
     public CommonResponse signInUser(AuthenticationRequest authenticationRequest) {
@@ -131,95 +127,6 @@ public class UserServiceImpl implements UserService {
                 .status(ResponseStatus.SUCCESS)
                 .data(null)
                 .successMessage(Constant.LOGOUT_SUCCESS)
-                .build();
-    }
-
-    @Override
-    public CommonResponse addAdmin(String email) throws InvalidEmailException {
-        EmailDetailRequest request = new EmailDetailRequest();
-        String subject = "Welcome to E-Gate 2.0 - Your Admin Access Details";
-        String body = """
-        <html>
-        <head>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background-color: #f4f4f4;
-                    color: #333;
-                    margin: 0;
-                    padding: 20px;
-                }
-                .container {
-                    background-color: #ffffff;
-                    border-radius: 8px;
-                    padding: 20px;
-                    max-width: 600px;
-                    margin: auto;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                }
-                .header {
-                    background-color: #007BFF;
-                    color: #ffffff;
-                    padding: 10px 20px;
-                    border-radius: 8px 8px 0 0;
-                    text-align: center;
-                }
-                .content {
-                    margin: 20px 0;
-                }
-                .button {
-                    display: inline-block;
-                    font-size: 16px;
-                    color: #ffffff;
-                    background-color: #007BFF;
-                    padding: 10px 20px;
-                    text-decoration: none;
-                    border-radius: 5px;
-                }
-                .footer {
-                    font-size: 12px;
-                    color: #777;
-                    text-align: center;
-                    margin-top: 20px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    Welcome to E-Gate v2.0
-                </div>
-                <div class="content">
-                    <p>Dear Administrator,</p>
-                    <p>We are pleased to inform you that you have been granted administrative access to E-Gate v2.0. Your default password is <strong>"karpagam"</strong>. For security reasons, we encourage you to change your password immediately after logging in.</p>
-                    <p>To access the E-Gate v2.0 system, please use the following link:</p>
-                    <p><a href="#" class="button">Log in to E-Gate v2.0</a></p>
-                    <p>If you encounter any issues or have any questions regarding your new role or the system, please do not hesitate to reach out to our support team.</p>
-                    <p>Thank you for your attention to this matter. We look forward to your effective management within E-Gate v2.0.</p>
-                </div>
-                <div class="footer">
-                    <p>This is an automated message. Please do not reply to this email.</p>
-                    <p>&copy; 2024 E-gate v2.0. All rights reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """;
-        request.setSubject(subject);
-        request.setRecipient(email);
-        request.setMsgBody(body);
-        boolean isSent = emailUtils.sendMimeMessage(request);
-        if(!isSent){
-            throw new InvalidEmailException(Constant.INVALID_EMAIL);
-        }
-        Admins admins = new Admins();
-        admins.setAdminEmail(email);
-        adminsRepository.save(admins);
-        return CommonResponse.builder()
-                .code(201)
-                .successMessage(Constant.ADMIN_ADDED_SUCCESS)
-                .data(email)
-                .status(ResponseStatus.CREATED)
                 .build();
     }
 
@@ -402,6 +309,108 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
         otpInfoRepository.deleteById(otpInfoOptional.get().get_id());
+        EmailDetailRequest emailRequest = new EmailDetailRequest();
+        String body = String.format(
+                """
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Password Change Confirmation</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    background-color: #f4f4f4;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                .container {
+                                    max-width: 600px;
+                                    margin: 20px auto;
+                                    background-color: #ffffff;
+                                    padding: 20px;
+                                    border-radius: 8px;
+                                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                                }
+                                .header {
+                                    background-color: #2c3e50;
+                                    padding: 20px;
+                                    border-radius: 8px 8px 0 0;
+                                    text-align: center;
+                                    color: #ffffff;
+                                }
+                                .header h1 {
+                                    margin: 0;
+                                    font-size: 24px;
+                                }
+                                .content {
+                                    padding: 20px;
+                                    font-size: 16px;
+                                    line-height: 1.6;
+                                    color: #333333;
+                                }
+                                .content h2 {
+                                    color: #2c3e50;
+                                    font-size: 20px;
+                                }
+                                .content p {
+                                    margin: 10px 0;
+                                }
+                                .content ul {
+                                    list-style-type: none;
+                                    padding: 0;
+                                }
+                                .content ul li {
+                                    background-color: #ecf0f1;
+                                    margin: 5px 0;
+                                    padding: 10px;
+                                    border-radius: 4px;
+                                }
+                                .footer {
+                                    text-align: center;
+                                    padding: 20px;
+                                    font-size: 14px;
+                                    color: #777777;
+                                    background-color: #ecf0f1;
+                                    border-radius: 0 0 8px 8px;
+                                }
+                                .footer a {
+                                    color: #2c3e50;
+                                    text-decoration: none;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                    <h1>Password Change Notification</h1>
+                                </div>
+                                <div class="content">
+                                    <h2>Dear Admin,</h2>
+                                    <p>We are pleased to inform you that your password for the E-gate 2.0 system has been successfully updated.</p>
+                                    <p><strong>Summary of Changes:</strong></p>
+                                    <ul>
+                                        <li><strong>Account:</strong> %s</li>
+                                        <li><strong>Date and Time of Change:</strong> %s</li>
+                                    </ul>
+                                    <p>If you did not request this change, please contact our support team immediately to ensure the security of your account.</p>
+                                    <p>For your protection, please avoid sharing your password with anyone and ensure it is stored securely.</p>
+                                </div>
+                                <div class="footer">
+                                    <p>Thank you for using E-gate 2.0.</p>
+                                    <p>If you have any questions or need assistance, feel free to <a href="%s">contact us</a>.</p>
+                                    <p>Best regards,<br>The E-gate 2.0 Team</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+               """
+                ,user.getEmail(), LocalDate.now()+" "+ LocalTime.now(),"mailto:deepakbharani65@gmail.com");
+        emailRequest.setRecipient(user.getEmail());
+        emailRequest.setMsgBody(body);
+        emailRequest.setSubject("E-gate 2.0: Your Password Has Been Successfully Updated");
+        emailUtils.sendMimeMessage(emailRequest);
         return CommonResponse.builder()
                 .code(200)
                 .data(request.getEmail())

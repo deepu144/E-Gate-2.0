@@ -11,10 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface EntryController {
     @PostMapping("/add")
     ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam  String rollNumber,HttpServletRequest request);
-    @GetMapping("/inCount")
-    ResponseEntity<CommonResponse> getTodayInCount(HttpServletRequest request);
-    @GetMapping("/outCount")
-    ResponseEntity<CommonResponse> getTodayOutCount(HttpServletRequest request);
+    @GetMapping("/today/utils")
+    ResponseEntity<CommonResponse> getTodayUtils(HttpServletRequest request);
     @PostMapping("/login")
     ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request);
     @GetMapping("/logout")

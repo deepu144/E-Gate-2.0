@@ -70,16 +70,6 @@ public class AuthControllerImpl implements AuthController {
         }
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<CommonResponse> addAdmin(@RequestParam String email){
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(userService.addAdmin(email));
-        }catch (Exception e){
-            log.error("** addAdmin: {}",e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
-        }
-    }
-
     @PostMapping("/pwd/forgot")
     public ResponseEntity<CommonResponse> forgotPassword(@RequestParam String email){
         try {

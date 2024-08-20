@@ -19,6 +19,8 @@ public interface AdminController {
                                                @RequestParam int page,
                                                @RequestParam int size
     );
+    @PostMapping("/add")
+    ResponseEntity<CommonResponse> addAdmin(@RequestParam String email);
     @PostMapping("/batch/add")
     ResponseEntity<CommonResponse> addBatch(@RequestParam String batch, @RequestParam("file") MultipartFile multipartFile);
     @GetMapping("/batch")

@@ -90,6 +90,17 @@ public class AdminControllerImpl implements AdminController {
         }
     }
 
+    @Override
+    @PostMapping("/add")
+    public ResponseEntity<CommonResponse> addAdmin(@RequestParam String email){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.addAdmin(email));
+        }catch (Exception e){
+            LOGGER.error("** addAdmin: {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
     public CommonResponse setServerError(Exception e){
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setCode(500);

@@ -22,8 +22,6 @@ public interface AuthController {
                                                   @RequestParam("picture") String picture,
                                                   @RequestParam("id") String id
     );
-    @PostMapping("/add")
-    ResponseEntity<CommonResponse> addAdmin(@RequestParam String email);
     @PostMapping("/pwd/forgot")
     ResponseEntity<CommonResponse> forgotPassword(@RequestParam String email);
     @PostMapping("/pwd/otp/verify")

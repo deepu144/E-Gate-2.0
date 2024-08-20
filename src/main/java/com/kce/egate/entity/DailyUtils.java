@@ -14,6 +14,8 @@ public class DailyUtils {
     private String _id;
     private String uniqueId;
     private LocalDate today;
-    private Long inCount;
-    private Long outCount;
+    private Long studentInCount;
+    private Long studentOutCount;
+    private Long staffInCount;
+    private Long staffOutCount;
 }

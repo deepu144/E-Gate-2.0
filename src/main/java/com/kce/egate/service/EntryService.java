@@ -10,9 +10,7 @@ import javax.management.InvalidAttributeValueException;
 public interface EntryService {
     CommonResponse addOrUpdateEntry(String rollNumber,String header) throws InvalidBatchException, InvalidAttributeValueException, InvalidJWTTokenException, IllegalAccessException;
 
-    CommonResponse getTodayInCount(String header) throws InvalidJWTTokenException, IllegalAccessException;
-
-    CommonResponse getTodayOutCount(String header) throws InvalidJWTTokenException, IllegalAccessException;
+    CommonResponse getTodayUtils(String header) throws InvalidJWTTokenException, IllegalAccessException;
 
     CommonResponse userLogin(AuthenticationRequest request);
 

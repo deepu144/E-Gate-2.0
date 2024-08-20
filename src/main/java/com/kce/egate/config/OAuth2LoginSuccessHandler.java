@@ -1,6 +1,5 @@
 package com.kce.egate.config;
 
-import com.kce.egate.constant.Constant;
 import com.kce.egate.entity.Admins;
 import com.kce.egate.entity.User;
 import com.kce.egate.repository.AdminsRepository;

@@ -4,31 +4,31 @@ import com.kce.egate.constant.Constant;
 import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.ResponseStatus;
 import com.kce.egate.enumeration.Status;
+import com.kce.egate.repository.AdminsRepository;
 import com.kce.egate.repository.BatchRepository;
 import com.kce.egate.repository.EntryRepository;
 import com.kce.egate.repository.UserRepository;
+import com.kce.egate.request.EmailDetailRequest;
 import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.BatchObject;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.response.EntryObject;
 import com.kce.egate.response.ListResponse;
 import com.kce.egate.service.AdminService;
+import com.kce.egate.util.EmailUtils;
 import com.kce.egate.util.FileUtils;
 import com.kce.egate.util.Mapper;
 import com.kce.egate.util.exceptions.DuplicateInformationFoundException;
+import com.kce.egate.util.exceptions.InvalidEmailException;
 import com.kce.egate.util.exceptions.InvalidFilterException;
 import com.kce.egate.util.exceptions.PasswordNotMatchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.management.InvalidAttributeValueException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -45,6 +45,8 @@ public class AdminServiceImpl implements AdminService {
     private final BatchRepository batchRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final EmailUtils emailUtils;
+    private final AdminsRepository adminsRepository;
 
     @Override
     public CommonResponse getAllEntry(
@@ -54,6 +56,27 @@ public class AdminServiceImpl implements AdminService {
             String batch,
             int page,
             int size,
+            String order,
+            String orderBy
+    ) throws InvalidFilterException {
+        List<EntryObject> entryObjects = getAllEntryObject(rollNumber,fromDate,toDate,batch,order,orderBy);
+        int fromIndex = Math.min(page * size, entryObjects.size());
+        int toIndex = Math.min(fromIndex + size, entryObjects.size());
+        List<EntryObject> paginatedEntries = entryObjects.subList(fromIndex, toIndex);
+        ListResponse listResponse = new ListResponse(entryObjects.size(), paginatedEntries);
+        return CommonResponse.builder()
+                .status(ResponseStatus.SUCCESS)
+                .code(200)
+                .data(listResponse)
+                .successMessage(Constant.ENTRY_FETCH_SUCCESS)
+                .build();
+    }
+
+    public List<EntryObject> getAllEntryObject(
+            String rollNumber,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String batch,
             String order,
             String orderBy
     ) throws InvalidFilterException {
@@ -126,16 +149,7 @@ public class AdminServiceImpl implements AdminService {
                 }
             }
         }
-        int fromIndex = Math.min(page * size, entryObjects.size());
-        int toIndex = Math.min(fromIndex + size, entryObjects.size());
-        List<EntryObject> paginatedEntries = entryObjects.subList(fromIndex, toIndex);
-        ListResponse listResponse = new ListResponse(entryObjects.size(), paginatedEntries);
-        return CommonResponse.builder()
-                .status(ResponseStatus.SUCCESS)
-                .code(200)
-                .data(listResponse)
-                .successMessage(Constant.ENTRY_FETCH_SUCCESS)
-                .build();
+        return entryObjects;
     }
 
     private void addEntryFromEntryRepository(String rollNumber, LocalDate fromDate, LocalDate toDate, List<EntryObject> entryObjects) {
@@ -266,7 +280,7 @@ public class AdminServiceImpl implements AdminService {
         if(!batchName.startsWith("Batch_")){
             throw new InvalidParameterException(Constant.INVALID_BATCH);
         }
-        if(!(batchName.charAt(8)=='-')){
+        if(!(batchName.charAt(10)=='-')){
             throw new InvalidParameterException(Constant.INVALID_BATCH);
         }
         Set<BatchInformation> batchInformationList = FileUtils.uploadBatchInformation(multipartFile);
@@ -301,11 +315,100 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public CommonResponse addAdmin(String email) throws InvalidEmailException {
+        EmailDetailRequest request = new EmailDetailRequest();
+        String subject = "Welcome to E-Gate 2.0 - Your Admin Access Details";
+        String body = """
+        <html>
+        <head>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    color: #333;
+                    margin: 0;
+                    padding: 20px;
+                }
+                .container {
+                    background-color: #ffffff;
+                    border-radius: 8px;
+                    padding: 20px;
+                    max-width: 600px;
+                    margin: auto;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                }
+                .header {
+                    background-color: #007BFF;
+                    color: #ffffff;
+                    padding: 10px 20px;
+                    border-radius: 8px 8px 0 0;
+                    text-align: center;
+                }
+                .content {
+                    margin: 20px 0;
+                }
+                .button {
+                    display: inline-block;
+                    font-size: 16px;
+                    color: #ffffff;
+                    background-color: #007BFF;
+                    padding: 10px 20px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                }
+                .footer {
+                    font-size: 12px;
+                    color: #777;
+                    text-align: center;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    Welcome to E-Gate v2.0
+                </div>
+                <div class="content">
+                    <p>Dear Administrator,</p>
+                    <p>We are pleased to inform you that you have been granted administrative access to E-Gate v2.0. Your default password is <strong>"karpagam"</strong>. For security reasons, we encourage you to change your password immediately after logging in.</p>
+                    <p>To access the E-Gate v2.0 system, please use the following link:</p>
+                    <p><a href="#" class="button">Log in to E-Gate v2.0</a></p>
+                    <p>If you encounter any issues or have any questions regarding your new role or the system, please do not hesitate to reach out to our support team.</p>
+                    <p>Thank you for your attention to this matter. We look forward to your effective management within E-Gate v2.0.</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated message. Please do not reply to this email.</p>
+                    <p>&copy; 2024 E-gate v2.0. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """;
+        request.setSubject(subject);
+        request.setRecipient(email);
+        request.setMsgBody(body);
+        boolean isSent = emailUtils.sendMimeMessage(request);
+        if(!isSent){
+            throw new InvalidEmailException(Constant.INVALID_EMAIL);
+        }
+        Admins admins = new Admins();
+        admins.setAdminEmail(email);
+        adminsRepository.save(admins);
+        return CommonResponse.builder()
+                .code(201)
+                .successMessage(Constant.ADMIN_ADDED_SUCCESS)
+                .data(email)
+                .status(ResponseStatus.CREATED)
+                .build();
+    }
+
+    @Override
     public CommonResponse deleteBatch(String batchName) throws ClassNotFoundException {
         if(!batchName.startsWith("Batch_")){
             throw new InvalidParameterException(Constant.INVALID_BATCH);
         }
-        if(!(batchName.charAt(8)=='-')){
+        if(!(batchName.charAt(10)=='-')){
             throw new InvalidParameterException(Constant.INVALID_BATCH);
         }
         Optional<Batch> optionalBatch = batchRepository.findByBatchName(batchName);
@@ -337,6 +440,108 @@ public class AdminServiceImpl implements AdminService {
         }
         user.setPassword(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
         userRepository.save(user);
+        var request = new EmailDetailRequest();
+        String body = String.format(
+                """
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Password Change Confirmation</title>
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    background-color: #f4f4f4;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                                .container {
+                                    max-width: 600px;
+                                    margin: 20px auto;
+                                    background-color: #ffffff;
+                                    padding: 20px;
+                                    border-radius: 8px;
+                                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                                }
+                                .header {
+                                    background-color: #2c3e50;
+                                    padding: 20px;
+                                    border-radius: 8px 8px 0 0;
+                                    text-align: center;
+                                    color: #ffffff;
+                                }
+                                .header h1 {
+                                    margin: 0;
+                                    font-size: 24px;
+                                }
+                                .content {
+                                    padding: 20px;
+                                    font-size: 16px;
+                                    line-height: 1.6;
+                                    color: #333333;
+                                }
+                                .content h2 {
+                                    color: #2c3e50;
+                                    font-size: 20px;
+                                }
+                                .content p {
+                                    margin: 10px 0;
+                                }
+                                .content ul {
+                                    list-style-type: none;
+                                    padding: 0;
+                                }
+                                .content ul li {
+                                    background-color: #ecf0f1;
+                                    margin: 5px 0;
+                                    padding: 10px;
+                                    border-radius: 4px;
+                                }
+                                .footer {
+                                    text-align: center;
+                                    padding: 20px;
+                                    font-size: 14px;
+                                    color: #777777;
+                                    background-color: #ecf0f1;
+                                    border-radius: 0 0 8px 8px;
+                                }
+                                .footer a {
+                                    color: #2c3e50;
+                                    text-decoration: none;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                    <h1>Password Change Notification</h1>
+                                </div>
+                                <div class="content">
+                                    <h2>Dear Admin,</h2>
+                                    <p>We are pleased to inform you that your password for the E-gate 2.0 system has been successfully updated.</p>
+                                    <p><strong>Summary of Changes:</strong></p>
+                                    <ul>
+                                        <li><strong>Account:</strong> %s</li>
+                                        <li><strong>Date and Time of Change:</strong> %s</li>
+                                    </ul>
+                                    <p>If you did not request this change, please contact our support team immediately to ensure the security of your account.</p>
+                                    <p>For your protection, please avoid sharing your password with anyone and ensure it is stored securely.</p>
+                                </div>
+                                <div class="footer">
+                                    <p>Thank you for using E-gate 2.0.</p>
+                                    <p>If you have any questions or need assistance, feel free to <a href="%s">contact us</a>.</p>
+                                    <p>Best regards,<br>The E-gate 2.0 Team</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+               """
+        ,user.getEmail(),LocalDate.now()+" "+LocalTime.now(),"mailto:deepakbharani65@gmail.com");
+        request.setRecipient(user.getEmail());
+        request.setMsgBody(body);
+        request.setSubject("E-gate 2.0: Your Password Has Been Successfully Updated");
+        emailUtils.sendMimeMessage(request);
         return CommonResponse.builder()
                 .code(200)
                 .successMessage(Constant.PASSWORD_CHANGED_SUCCESS)

@@ -32,4 +32,5 @@ public final class Constant {
     public static final String INVALID_OTP = "OTP is Invalid";
     public static final String OTP_VERIFIED_SUCCESS = "OTP has been Validated and Verified Successfully!";
     public static final String INVALID_JWT_TOKEN = "Invalid JWT Token";
+    public static final String DIRECTORY_NOT_CREATED = "Something went wrong!, Directory can't able to Created";
 }

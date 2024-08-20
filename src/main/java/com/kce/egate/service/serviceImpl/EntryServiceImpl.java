@@ -7,9 +7,11 @@ import com.kce.egate.enumeration.Status;
 import com.kce.egate.repository.*;
 import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
+import com.kce.egate.response.DailyUtilsObject;
 import com.kce.egate.response.EntryResponse;
 import com.kce.egate.service.EntryService;
 import com.kce.egate.util.JWTUtils;
+import com.kce.egate.util.Mapper;
 import com.kce.egate.util.exceptions.InvalidBatchException;
 import com.kce.egate.util.exceptions.InvalidJWTTokenException;
 import lombok.RequiredArgsConstructor;
@@ -76,7 +78,7 @@ public class EntryServiceImpl implements EntryService {
             entry.setOutDate(LocalDate.now());
             entry.setOutTime(LocalTime.now());
             entryRepository.save(entry);
-            updateTodayUtils(true);
+            updateTodayUtils(true, rollNumber.length() != 5);
             EntryResponse entryResponse = EntryResponse.builder()
                     .rollNumber(rollNumber)
                     .name(batchInformation.getName())
@@ -133,32 +135,12 @@ public class EntryServiceImpl implements EntryService {
                 .outTime(entry.getOutTime())
                 .build();
         entryRepository.delete(entry);
-        updateTodayUtils(false);
+        updateTodayUtils(false, rollNumber.length() != 5);
         return CommonResponse.builder()
                 .data(response)
                 .successMessage(Constant.ENTRY_DELETED_SUCCESS)
                 .status(ResponseStatus.SUCCESS)
                 .code(200)
-                .build();
-    }
-
-    @Override
-    public CommonResponse getTodayInCount(String header) throws InvalidJWTTokenException, IllegalAccessException {
-        authorizeToken(header);
-        Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
-        if(dailyUtilsOptional.isEmpty()){
-            return CommonResponse.builder()
-                    .code(200)
-                    .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
-                    .status(ResponseStatus.SUCCESS)
-                    .data(0)
-                    .build();
-        }
-        return CommonResponse.builder()
-                .code(200)
-                .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
-                .status(ResponseStatus.SUCCESS)
-                .data(dailyUtilsOptional.get().getInCount())
                 .build();
     }
 
@@ -180,7 +162,7 @@ public class EntryServiceImpl implements EntryService {
     }
 
     @Override
-    public CommonResponse getTodayOutCount(String header) throws InvalidJWTTokenException, IllegalAccessException {
+    public CommonResponse getTodayUtils(String header) throws InvalidJWTTokenException, IllegalAccessException {
         authorizeToken(header);
         Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
         if(dailyUtilsOptional.isEmpty()){
@@ -191,11 +173,12 @@ public class EntryServiceImpl implements EntryService {
                     .data(0)
                     .build();
         }
+        DailyUtilsObject dailyUtilsObject = Mapper.convertToDailyUtilsObject(dailyUtilsOptional.get());
         return CommonResponse.builder()
                 .code(200)
                 .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
                 .status(ResponseStatus.SUCCESS)
-                .data(dailyUtilsOptional.get().getOutCount())
+                .data(dailyUtilsObject)
                 .build();
     }
 
@@ -239,27 +222,53 @@ public class EntryServiceImpl implements EntryService {
                 .build();
     }
 
-    private void updateTodayUtils(boolean check) {
+    private void updateTodayUtils(boolean check,boolean isStudent) {
         LocalDate today = LocalDate.now();
         Optional<DailyUtils> utilsOptional = dailyUtilsRepository.findByToday(today);
         DailyUtils dailyUtils;
         if(utilsOptional.isPresent()){
             dailyUtils = utilsOptional.get();
             if(check){
-                dailyUtils.setOutCount(dailyUtils.getOutCount()+1);
+                if(isStudent){
+                    dailyUtils.setStudentOutCount(dailyUtils.getStudentOutCount()+1);
+                }else{
+                    dailyUtils.setStaffOutCount(dailyUtils.getStaffOutCount()+1);
+                }
             }else{
-                dailyUtils.setInCount(dailyUtils.getInCount()+1);
+                if(isStudent){
+                    dailyUtils.setStudentInCount(dailyUtils.getStudentInCount()+1);
+                }else{
+                    dailyUtils.setStaffInCount(dailyUtils.getStaffInCount()+1);
+                }
             }
         }else{
             dailyUtils = new DailyUtils();
             dailyUtils.setUniqueId(UUID.randomUUID().toString());
             dailyUtils.setToday(today);
             if(check){
-                dailyUtils.setOutCount(1L);
-                dailyUtils.setInCount(0L);
+                if(isStudent){
+                    dailyUtils.setStudentOutCount(1L);
+                    dailyUtils.setStudentInCount(0L);
+                    dailyUtils.setStaffInCount(0L);
+                    dailyUtils.setStaffOutCount(0L);
+                }else{
+                    dailyUtils.setStudentOutCount(0L);
+                    dailyUtils.setStudentInCount(0L);
+                    dailyUtils.setStaffInCount(0L);
+                    dailyUtils.setStaffOutCount(1L);
+                }
             }else{
-                dailyUtils.setOutCount(0L);
-                dailyUtils.setInCount(1L);
+                if(isStudent){
+                    dailyUtils.setStudentOutCount(0L);
+                    dailyUtils.setStudentInCount(1L);
+                    dailyUtils.setStaffInCount(0L);
+                    dailyUtils.setStaffOutCount(0L);
+                }else{
+                    dailyUtils.setStudentOutCount(0L);
+                    dailyUtils.setStudentInCount(0L);
+                    dailyUtils.setStaffInCount(1L);
+                    dailyUtils.setStaffOutCount(0L);
+                }
             }
         }
         dailyUtilsRepository.save(dailyUtils);
@@ -280,7 +289,8 @@ public class EntryServiceImpl implements EntryService {
         }else if(rollNumberLength>=6 && rollNumberLength<=8){
             batch = Integer.parseInt(rollNumber.substring(0,2));
         }
-        collection = "Batch_"+batch+"-"+(batch+4);
+        int year = (LocalDate.now().getYear()/100)*100;
+        collection = "Batch_"+(year+batch)+"-"+(year+batch+4);
         return collection;
     }
 }

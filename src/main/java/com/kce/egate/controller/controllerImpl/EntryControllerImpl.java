@@ -34,22 +34,11 @@ public class EntryControllerImpl implements EntryController {
         }
     }
 
-    @GetMapping("/inCount")
-    public ResponseEntity<CommonResponse> getTodayInCount(HttpServletRequest request){
-        try {
-            String header = request.getHeader("Authorization");
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayInCount(header));
-        }catch (Exception e){
-            LOG.error("** getTodayInCount : {}",e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
-        }
-    }
-
     @GetMapping("/outCount")
-    public ResponseEntity<CommonResponse> getTodayOutCount(HttpServletRequest request){
+    public ResponseEntity<CommonResponse> getTodayUtils(HttpServletRequest request){
         try {
             String header = request.getHeader("Authorization");
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayOutCount(header));
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayUtils(header));
         }catch (Exception e){
             LOG.error("** getTodayOutCount : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
