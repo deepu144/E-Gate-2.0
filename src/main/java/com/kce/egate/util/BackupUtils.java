@@ -6,7 +6,6 @@ import com.kce.egate.entity.BatchInformation;
 import com.kce.egate.repository.BatchRepository;
 import com.kce.egate.response.EntryObject;
 import com.kce.egate.service.serviceImpl.AdminServiceImpl;
-import com.kce.egate.util.exceptions.InvalidFilterException;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -87,6 +86,6 @@ public class BackupUtils {
             }
         }catch (Exception ignored){
             System.out.println("NOOOO...........");
-        };
+        }
     }
 }
