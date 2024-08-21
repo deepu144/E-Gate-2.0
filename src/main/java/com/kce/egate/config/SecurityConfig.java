@@ -25,6 +25,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(proxyTargetClass = true)
@@ -44,8 +46,14 @@ public class SecurityConfig {
                         .anyRequest()
                         .authenticated()
                 )
+                .formLogin(
+                        form -> form.loginPage("/auth/admin/login")
+                                .permitAll()
+                )
                 .oauth2Login(
-                        login -> login.userInfoEndpoint(
+                        login -> login
+                                .loginPage("/auth/admin/login")
+                                .userInfoEndpoint(
                                         endpoint ->  endpoint.userService(oauth2UserService())
                                 )
                                 .successHandler(successHandler())
@@ -86,7 +94,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:8080");
+        config.setAllowedOrigins(Arrays.asList("http://localhost:8080","http://localhost:3000"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);

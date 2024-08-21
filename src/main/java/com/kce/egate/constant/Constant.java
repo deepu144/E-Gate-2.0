@@ -2,7 +2,6 @@ package com.kce.egate.constant;
 
 public final class Constant {
     public static final String INVALID_ROLL_NUMBER = "Invalid Roll Number";
-    public static final String SERVER_ERROR_MESSAGE = "Something went Wrong, Please try again !";
     public static final String ENTRY_CREATED_SUCCESS = "Person's entry has been created Successfully";
     public static final String ENTRY_DELETED_SUCCESS = "Person's entry has been deleted Successfully and Entry Invalidated";
     public static final String FETCH_BATCH_SUCCESS = "All Batch has been fetched Successfully";
@@ -33,4 +32,5 @@ public final class Constant {
     public static final String OTP_VERIFIED_SUCCESS = "OTP has been Validated and Verified Successfully!";
     public static final String INVALID_JWT_TOKEN = "Invalid JWT Token";
     public static final String DIRECTORY_NOT_CREATED = "Something went wrong!, Directory can't able to Created";
+    public static final String STUDENT_NOT_FOUND = "Student Not Found in DataBase";
 }

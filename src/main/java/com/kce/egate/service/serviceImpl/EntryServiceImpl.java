@@ -50,15 +50,10 @@ public class EntryServiceImpl implements EntryService {
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
         Optional<Entry> optionalEntry = entryRepository.findByRollNumber(rollNumber);
-        String batch;
-        if(rollNumber.length()==5){
-            batch = "Staff";
-        }else{
-            batch = getCollection(rollNumber);
-        }
+        String batch = getCollection(rollNumber);
         Query queryForBatchInformation = new Query();
         queryForBatchInformation.addCriteria(Criteria.where("rollNumber").is(rollNumber));
-        BatchInformation batchInformation = mongoTemplate.findOne(queryForBatchInformation, BatchInformation.class,batch);
+        BatchInformation batchInformation = mongoTemplate.findOne(queryForBatchInformation, BatchInformation.class,batch+"_Information");
         if(batchInformation==null){
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
@@ -276,6 +271,7 @@ public class EntryServiceImpl implements EntryService {
 
     public static String getCollection(String rollNumber) {
         int rollNumberLength = rollNumber.length();
+        if(rollNumberLength==5) return "Staff";
         String collection;
         int batch = 0;
         if(rollNumberLength>=10 && rollNumberLength<=12){

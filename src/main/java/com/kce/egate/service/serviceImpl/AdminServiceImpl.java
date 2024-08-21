@@ -10,19 +10,14 @@ import com.kce.egate.repository.EntryRepository;
 import com.kce.egate.repository.UserRepository;
 import com.kce.egate.request.EmailDetailRequest;
 import com.kce.egate.request.PasswordChangeRequest;
-import com.kce.egate.response.BatchObject;
-import com.kce.egate.response.CommonResponse;
-import com.kce.egate.response.EntryObject;
-import com.kce.egate.response.ListResponse;
+import com.kce.egate.response.*;
 import com.kce.egate.service.AdminService;
 import com.kce.egate.util.EmailUtils;
 import com.kce.egate.util.FileUtils;
 import com.kce.egate.util.Mapper;
-import com.kce.egate.util.exceptions.DuplicateInformationFoundException;
-import com.kce.egate.util.exceptions.InvalidEmailException;
-import com.kce.egate.util.exceptions.InvalidFilterException;
-import com.kce.egate.util.exceptions.PasswordNotMatchException;
+import com.kce.egate.util.exceptions.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -58,18 +53,41 @@ public class AdminServiceImpl implements AdminService {
             int size,
             String order,
             String orderBy
-    ) throws InvalidFilterException {
+    ) throws InvalidFilterException, UserNotFoundException {
         List<EntryObject> entryObjects = getAllEntryObject(rollNumber,fromDate,toDate,batch,order,orderBy);
         int fromIndex = Math.min(page * size, entryObjects.size());
         int toIndex = Math.min(fromIndex + size, entryObjects.size());
         List<EntryObject> paginatedEntries = entryObjects.subList(fromIndex, toIndex);
-        ListResponse listResponse = new ListResponse(entryObjects.size(), paginatedEntries);
+        List<EntryResponse> entryResponses = new ArrayList<>();
+        for(EntryObject entryObject : paginatedEntries){
+            BatchInformation information = mongoTemplate.findOne(new Query().addCriteria(Criteria.where("rollNumber").is(entryObject.getRollNumber())), BatchInformation.class,EntryServiceImpl.getCollection(entryObject.getRollNumber())+"_Information");
+            if(information==null){
+                throw new UserNotFoundException(Constant.STUDENT_NOT_FOUND);
+            }
+            EntryResponse response = getEntryResponseObject(entryObject, information);
+            entryResponses.add(response);
+        }
+        ListResponse listResponse = new ListResponse(entryObjects.size(), entryResponses);
         return CommonResponse.builder()
                 .status(ResponseStatus.SUCCESS)
                 .code(200)
                 .data(listResponse)
                 .successMessage(Constant.ENTRY_FETCH_SUCCESS)
                 .build();
+    }
+
+    private static EntryResponse getEntryResponseObject(EntryObject entryObject, BatchInformation information) {
+        EntryResponse response = new EntryResponse();
+        response.setRollNumber(entryObject.getRollNumber());
+        response.setOutTime(entryObject.getOutTime());
+        response.setInTime(entryObject.getInTime());
+        response.setOutDate(entryObject.getOutDate());
+        response.setInDate(entryObject.getInDate());
+        response.setStatus(entryObject.getStatus());
+        response.setName(information.getName());
+        response.setDept(information.getDept());
+        response.setBatch(information.getBatch());
+        return response;
     }
 
     public List<EntryObject> getAllEntryObject(
@@ -80,6 +98,12 @@ public class AdminServiceImpl implements AdminService {
             String order,
             String orderBy
     ) throws InvalidFilterException {
+        if(order==null){
+            order = "asc";
+        }
+        if(orderBy==null){
+            orderBy="inDate";
+        }
         if(fromDate!=null && toDate!=null){
             if(toDate.isBefore(fromDate)){
                 throw new InvalidFilterException(Constant.INVALID_FILTER);
@@ -548,6 +572,43 @@ public class AdminServiceImpl implements AdminService {
                 .data(null)
                 .status(ResponseStatus.UPDATED)
                 .build();
+    }
+
+    @Override
+    public CommonResponse getAllTodayEntry(int page,int size) throws UserNotFoundException {
+        PageRequest pageable = PageRequest.of(page, size);
+        List<Entry> entryList = entryRepository.findAll(pageable).getContent();
+        List<EntryResponse> entryResponses = new ArrayList<>();
+        for(Entry entry : entryList){
+            var information = mongoTemplate.findOne(new Query().addCriteria(Criteria.where("rollNumber").is(entry.getRollNumber())), BatchInformation.class,EntryServiceImpl.getCollection(entry.getRollNumber())+"_Information");
+            if(information==null){
+                throw new UserNotFoundException(Constant.STUDENT_NOT_FOUND);
+            }
+            EntryResponse response = getEntryResponseObjectFromEntry(entry, information);
+            entryResponses.add(response);
+        }
+        long count = entryRepository.count();
+        ListResponse listResponse = new ListResponse(count,entryResponses);
+        return CommonResponse.builder()
+                .code(200)
+                .status(ResponseStatus.SUCCESS)
+                .data(listResponse)
+                .successMessage(Constant.ENTRY_FETCH_SUCCESS)
+                .build();
+    }
+
+    private EntryResponse getEntryResponseObjectFromEntry(Entry entry, BatchInformation information) {
+        EntryResponse response = new EntryResponse();
+        response.setRollNumber(entry.getRollNumber());
+        response.setStatus(entry.getStatus());
+        response.setOutTime(entry.getOutTime());
+        response.setOutDate(entry.getOutDate());
+        response.setName(information.getName());
+        response.setInTime(entry.getInTime());
+        response.setInDate(entry.getInDate());
+        response.setDept(information.getDept());
+        response.setBatch(information.getBatch());
+        return response;
     }
 
     public int floorBinarySearch(List<LocalDate> inDateList, LocalDate fromDate) {

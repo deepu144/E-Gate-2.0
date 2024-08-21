@@ -122,8 +122,8 @@ public class AuthControllerImpl implements AuthController {
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setCode(500);
         commonResponse.setStatus(ResponseStatus.FAILED);
-        commonResponse.setData(e.getMessage());
-        commonResponse.setErrorMessage(Constant.SERVER_ERROR_MESSAGE);
+        commonResponse.setData(null);
+        commonResponse.setErrorMessage(e.getMessage());
         return commonResponse;
     }
 

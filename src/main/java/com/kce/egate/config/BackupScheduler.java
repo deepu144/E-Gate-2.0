@@ -2,11 +2,13 @@ package com.kce.egate.config;
 
 import com.kce.egate.util.BackupUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@EnableScheduling
 public class BackupScheduler {
     private final BackupUtils backupUtils;
 

@@ -19,6 +19,8 @@ public interface AdminController {
                                                @RequestParam int page,
                                                @RequestParam int size
     );
+    @GetMapping("/entry")
+    ResponseEntity<CommonResponse> getAllTodayEntry(int page,int size);
     @PostMapping("/add")
     ResponseEntity<CommonResponse> addAdmin(@RequestParam String email);
     @PostMapping("/batch/add")

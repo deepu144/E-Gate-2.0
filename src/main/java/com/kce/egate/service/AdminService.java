@@ -2,10 +2,7 @@ package com.kce.egate.service;
 
 import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.CommonResponse;
-import com.kce.egate.util.exceptions.DuplicateInformationFoundException;
-import com.kce.egate.util.exceptions.InvalidEmailException;
-import com.kce.egate.util.exceptions.InvalidFilterException;
-import com.kce.egate.util.exceptions.PasswordNotMatchException;
+import com.kce.egate.util.exceptions.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.management.InvalidAttributeValueException;
@@ -23,7 +20,7 @@ public interface AdminService {
             int size,
             String order,
             String orderBy
-    ) throws InvalidFilterException;
+    ) throws InvalidFilterException, UserNotFoundException;
 
     CommonResponse addAdmin(String email) throws InvalidEmailException;
 
@@ -34,4 +31,6 @@ public interface AdminService {
     CommonResponse deleteBatch(String batch) throws ClassNotFoundException;
 
     CommonResponse changeAdminPassword(PasswordChangeRequest passwordChangeRequest) throws InvalidObjectException, PasswordNotMatchException, InvalidAttributeValueException;
+
+    CommonResponse getAllTodayEntry(int page,int size) throws UserNotFoundException;
 }
