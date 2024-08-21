@@ -33,7 +33,7 @@ public class BackupUtils {
                 .map(Batch::getBatchName)
                 .toList();
         LocalDate today = LocalDate.now();
-        String fileName = BACKUP_DIR + "Backup_" + today.minusDays(7).toString() + "_" + today.toString() + ".xlsx";
+        String fileName = BACKUP_DIR + "Backup_" + today.minusDays(7) + "_" + today + ".xlsx";
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Entry BackUp Data");
             CellStyle boldStyle = workbook.createCellStyle();

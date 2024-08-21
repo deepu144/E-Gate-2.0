@@ -1,6 +1,5 @@
 package com.kce.egate.controller.controllerImpl;
 
-import com.kce.egate.constant.Constant;
 import com.kce.egate.controller.EntryController;
 import com.kce.egate.enumeration.ResponseStatus;
 import com.kce.egate.request.AuthenticationRequest;
