@@ -32,8 +32,8 @@ public class EntryControllerImpl implements EntryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
-
-    @GetMapping("/outCount")
+    @Override
+    @GetMapping("/today/utils")
     public ResponseEntity<CommonResponse> getTodayUtils(HttpServletRequest request){
         try {
             String header = request.getHeader("Authorization");
@@ -44,6 +44,7 @@ public class EntryControllerImpl implements EntryController {
         }
     }
 
+    @Override
     @PostMapping("/login")
     public ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request){
         try {

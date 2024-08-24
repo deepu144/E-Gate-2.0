@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 
 public interface AdminController {
-    @GetMapping("/")
+    @GetMapping("/entry")
     ResponseEntity<CommonResponse> getAllEntry(@RequestParam(required = false) String rollNumber,
                                                @RequestParam(required = false) LocalDate fromDate,
                                                @RequestParam(required = false) LocalDate toDate,
@@ -19,7 +19,7 @@ public interface AdminController {
                                                @RequestParam int page,
                                                @RequestParam int size
     );
-    @GetMapping("/entry")
+    @GetMapping("/today/entry")
     ResponseEntity<CommonResponse> getAllTodayEntry(int page,int size);
     @PostMapping("/add")
     ResponseEntity<CommonResponse> addAdmin(@RequestParam String email);

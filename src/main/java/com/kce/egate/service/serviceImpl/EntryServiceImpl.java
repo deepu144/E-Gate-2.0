@@ -128,6 +128,7 @@ public class EntryServiceImpl implements EntryService {
                 .outDate(entry.getOutDate())
                 .inTime(entry.getInTime())
                 .outTime(entry.getOutTime())
+                .status(Status.IN)
                 .build();
         entryRepository.delete(entry);
         updateTodayUtils(false, rollNumber.length() != 5);
@@ -165,7 +166,14 @@ public class EntryServiceImpl implements EntryService {
                     .code(200)
                     .successMessage(Constant.FETCH_IN_COUNT_SUCCESS)
                     .status(ResponseStatus.SUCCESS)
-                    .data(0)
+                    .data(
+                            DailyUtilsObject.builder()
+                                    .staffInCount(0L)
+                                    .studentInCount(0L)
+                                    .studentOutCount(0L)
+                                    .staffOutCount(0L)
+                                    .build()
+                    )
                     .build();
         }
         DailyUtilsObject dailyUtilsObject = Mapper.convertToDailyUtilsObject(dailyUtilsOptional.get());

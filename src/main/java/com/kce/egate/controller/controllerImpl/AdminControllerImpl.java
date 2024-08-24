@@ -25,7 +25,7 @@ public class AdminControllerImpl implements AdminController {
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/")
+    @GetMapping("/entry")
     public ResponseEntity<CommonResponse> getAllEntry(@RequestParam(required = false) String rollNumber,
                                                       @RequestParam(required = false) LocalDate fromDate,
                                                       @RequestParam(required = false) LocalDate toDate,
@@ -45,7 +45,7 @@ public class AdminControllerImpl implements AdminController {
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping("/batch/add/")
+    @PostMapping("/batch/add")
     public ResponseEntity<CommonResponse> addBatch(@RequestParam String batch , @RequestParam("file")MultipartFile multipartFile) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(adminService.addBatch(batch,multipartFile));
@@ -69,7 +69,7 @@ public class AdminControllerImpl implements AdminController {
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @DeleteMapping("batch")
+    @DeleteMapping("/batch")
     public ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch){
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(adminService.deleteBatch(batch));
@@ -105,7 +105,7 @@ public class AdminControllerImpl implements AdminController {
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/entry")
+    @GetMapping("/today/entry")
     public ResponseEntity<CommonResponse> getAllTodayEntry(int page,int size){
         try {
             return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllTodayEntry(page,size));

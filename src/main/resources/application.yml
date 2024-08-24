@@ -3,7 +3,8 @@ spring:
     name: E-Gate-2.0
   data:
     mongodb:
-      host: host.docker.internal
+#      host: host.docker.internal
+      host: localhost
       port: 27017
       database: e-gate
   banner:
