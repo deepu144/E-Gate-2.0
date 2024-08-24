@@ -561,7 +561,7 @@ public class AdminServiceImpl implements AdminService {
                         </body>
                         </html>
                """
-        ,user.getEmail(),LocalDate.now()+" "+LocalTime.now(),"mailto:deepakbharani65@gmail.com");
+        ,user.getEmail(),LocalDate.now()+" "+LocalTime.now(),"mailto:kce.egate@gmail.com");
         request.setRecipient(user.getEmail());
         request.setMsgBody(body);
         request.setSubject("E-gate 2.0: Your Password Has Been Successfully Updated");

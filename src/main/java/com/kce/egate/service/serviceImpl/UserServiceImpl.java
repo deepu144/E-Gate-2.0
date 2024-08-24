@@ -19,15 +19,12 @@ import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.UserService;
 import com.kce.egate.util.EmailUtils;
 import com.kce.egate.util.JWTUtils;
+import com.kce.egate.util.exceptions.InvalidPassword;
 import com.kce.egate.util.exceptions.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import javax.management.InvalidAttributeValueException;
@@ -39,7 +36,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final JWTUtils jwtUtils;
-    private final AuthenticationManager authenticationManager;
     private final TokenRepository tokenRepository;
     private final AdminsRepository adminsRepository;
     private final UserRepository userRepository;
@@ -49,19 +45,38 @@ public class UserServiceImpl implements UserService {
     private static final Long EXPIRE_TIME = 300000L;
 
     @Override
-    public CommonResponse signInUser(AuthenticationRequest authenticationRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authenticationRequest.getEmail(), authenticationRequest.getPassword())
-        );
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+    public CommonResponse signInUser(AuthenticationRequest authenticationRequest) throws IllegalAccessException, InvalidPassword {
+        List<String> admins = adminsRepository.findAll()
+                .parallelStream()
+                .map(Admins::getAdminEmail)
                 .toList();
+        if(!admins.contains(authenticationRequest.getEmail())){
+            throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
+        }
+        Optional<User> userOptional = userRepository.findByEmail(authenticationRequest.getEmail());
+        String email;
+        String role;
+        if(userOptional.isEmpty()){
+            User user = new User();
+            user.setEmail(authenticationRequest.getEmail());
+            user.setPassword(passwordEncoder.encode("karpagam"));
+            user.setRole("ADMIN");
+            userRepository.save(user);
+            email = user.getEmail();
+            role = user.getRole();
+        }else{
+            if(!passwordEncoder.matches(authenticationRequest.getPassword(), userOptional.get().getPassword())){
+                throw new InvalidPassword(Constant.PASSWORD_INCORRECT);
+            }
+            User user = userOptional.get();
+            email = user.getEmail();
+            role = user.getRole();
+        }
         HashMap<String,Object> claims = new HashMap<>();
-        claims.put("roles",roles);
-        String token = jwtUtils.generateToken(claims,userDetails);
-        expireAllExistingToken(userDetails.getUsername());
-        saveToken(token, userDetails.getUsername());
+        claims.put("roles",List.of(role));
+        String token = jwtUtils.generateToken(claims,email);
+        expireAllExistingToken(email);
+        saveToken(token,email);
         return CommonResponse.builder()
                 .code(200)
                 .status(ResponseStatus.SUCCESS)
@@ -406,7 +421,7 @@ public class UserServiceImpl implements UserService {
                         </body>
                         </html>
                """
-                ,user.getEmail(), LocalDate.now()+" "+ LocalTime.now(),"mailto:deepakbharani65@gmail.com");
+                ,user.getEmail(), LocalDate.now()+" "+ LocalTime.now(),"mailto:kce.egate@gmail.com");
         emailRequest.setRecipient(user.getEmail());
         emailRequest.setMsgBody(body);
         emailRequest.setSubject("E-gate 2.0: Your Password Has Been Successfully Updated");

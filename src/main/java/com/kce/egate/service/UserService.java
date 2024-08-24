@@ -4,12 +4,13 @@ import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.request.PasswordChangeOTPRequest;
 import com.kce.egate.request.VerifyOTPRequest;
 import com.kce.egate.response.CommonResponse;
+import com.kce.egate.util.exceptions.InvalidPassword;
 import com.kce.egate.util.exceptions.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import javax.management.InvalidAttributeValueException;
 
 public interface UserService {
-    CommonResponse signInUser(AuthenticationRequest authenticationRequest);
+    CommonResponse signInUser(AuthenticationRequest authenticationRequest) throws IllegalAccessException, InvalidPassword;
     CommonResponse oauth2Callback(String email,String name,String picture,String id) throws IllegalAccessException;
     CommonResponse logout(HttpServletRequest request);
     CommonResponse forgotPassword(String email) throws UserNotFoundException;
