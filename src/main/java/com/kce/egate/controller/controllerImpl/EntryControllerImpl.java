@@ -46,7 +46,7 @@ public class EntryControllerImpl implements EntryController {
 
     @Override
     @PostMapping("/login")
-    public ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request){
+    public ResponseEntity<CommonResponse> userLogin(@RequestBody AuthenticationRequest request){
         try {
             return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogin(request));
         }catch (Exception e){
@@ -57,7 +57,7 @@ public class EntryControllerImpl implements EntryController {
 
     @Override
     @GetMapping("/logout")
-    public ResponseEntity<CommonResponse> userLogout(String email){
+    public ResponseEntity<CommonResponse> userLogout(@RequestParam String email){
         try {
             return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(email));
         }catch (Exception e){

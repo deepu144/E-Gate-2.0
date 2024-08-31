@@ -4,9 +4,9 @@ spring:
   data:
     mongodb:
 #      host: host.docker.internal
-      host: localhost
       port: 27017
       database: e-gate
+      host: localhost
   banner:
     location: E-Gate_v2.0-Banner.txt
   mail:

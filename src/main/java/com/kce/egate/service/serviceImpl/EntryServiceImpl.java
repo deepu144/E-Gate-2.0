@@ -196,7 +196,10 @@ public class EntryServiceImpl implements EntryService {
         );
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(userDetails.getUsername());
-        loginUtilsOptional.ifPresent(entryLoginUtils -> loginUtilsRepository.deleteById(entryLoginUtils.get_id()));
+        if (loginUtilsOptional.isPresent()) {
+            EntryLoginUtils entryLoginUtils = loginUtilsOptional.get();
+            loginUtilsRepository.deleteById(entryLoginUtils.get_id());
+        }
         EntryLoginUtils loginUtils = new EntryLoginUtils();
         loginUtils.setEmail(userDetails.getUsername());
         String uniqueId = UUID.randomUUID().toString();
