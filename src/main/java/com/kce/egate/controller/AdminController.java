@@ -7,20 +7,23 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public interface AdminController {
     @GetMapping("/entry")
     ResponseEntity<CommonResponse> getAllEntry(@RequestParam(required = false) String rollNumber,
                                                @RequestParam(required = false) LocalDate fromDate,
                                                @RequestParam(required = false) LocalDate toDate,
+                                               @RequestParam(required = false) LocalTime fromTime,
+                                               @RequestParam(required = false) LocalTime toTime,
                                                @RequestParam(required = false) String batch,
                                                @RequestParam(defaultValue = "desc") String order,
-                                               @RequestParam(defaultValue = "inTime") String orderBy,
+                                               @RequestParam(defaultValue = "inDate") String orderBy,
                                                @RequestParam int page,
                                                @RequestParam int size
     );
     @GetMapping("/today/entry")
-    ResponseEntity<CommonResponse> getAllTodayEntry(int page,int size);
+    ResponseEntity<CommonResponse> getAllTodayEntry(@RequestParam int page, @RequestParam int size);
     @PostMapping("/add")
     ResponseEntity<CommonResponse> addAdmin(@RequestParam String email);
     @PostMapping("/batch/add")
@@ -31,4 +34,6 @@ public interface AdminController {
     ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch);
     @PutMapping("/pwd/change")
     ResponseEntity<CommonResponse> changeAdminPassword(@RequestBody PasswordChangeRequest passwordChangeRequest);
+    @GetMapping("/today/utils")
+    ResponseEntity<CommonResponse> getTodayUtils();
 }

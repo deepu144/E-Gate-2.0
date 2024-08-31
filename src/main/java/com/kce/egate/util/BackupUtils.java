@@ -94,7 +94,7 @@ public class BackupUtils {
                         cell7.setCellStyle(normalStyle);
 
                         Cell cell8 = row.createCell(8);
-                        cell8.setCellValue(batchInformation.getBatch());
+                        cell8.setCellValue(batchInformation.getBatch().substring(6));
                         cell8.setCellStyle(normalStyle);
                     }
                 }

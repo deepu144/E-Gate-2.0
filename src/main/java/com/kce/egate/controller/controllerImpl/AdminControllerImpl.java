@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @RestController
 @RequestMapping("/kce/admin")
@@ -29,14 +30,16 @@ public class AdminControllerImpl implements AdminController {
     public ResponseEntity<CommonResponse> getAllEntry(@RequestParam(required = false) String rollNumber,
                                                       @RequestParam(required = false) LocalDate fromDate,
                                                       @RequestParam(required = false) LocalDate toDate,
+                                                      @RequestParam(required = false) LocalTime fromTime,
+                                                      @RequestParam(required = false) LocalTime toTime,
                                                       @RequestParam(required = false) String batch,
-                                                      @RequestParam(defaultValue = "asc") String order,
+                                                      @RequestParam(defaultValue = "desc") String order,
                                                       @RequestParam(defaultValue = "inDate") String orderBy,
                                                       @RequestParam int page,
                                                       @RequestParam int size
     ){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllEntry(rollNumber,fromDate,toDate,batch,page,size,order,orderBy));
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllEntry(rollNumber,fromDate,toDate,fromTime,toTime,batch,page,size,order,orderBy));
         }catch (Exception e){
             LOGGER.error("** getAllEntry : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
@@ -60,7 +63,7 @@ public class AdminControllerImpl implements AdminController {
     @GetMapping("/batch")
     public ResponseEntity<CommonResponse> getAllBatch() {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.getAllBatch());
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllBatch());
         }catch (Exception e){
             LOGGER.error("** getAllBatch : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
@@ -72,7 +75,7 @@ public class AdminControllerImpl implements AdminController {
     @DeleteMapping("/batch")
     public ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch){
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.deleteBatch(batch));
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.deleteBatch(batch));
         }catch (Exception e) {
             LOGGER.error("** deleteBatch : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
@@ -84,7 +87,7 @@ public class AdminControllerImpl implements AdminController {
     @PutMapping("/pwd/change")
     public ResponseEntity<CommonResponse> changeAdminPassword(@RequestBody PasswordChangeRequest passwordChangeRequest){
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.changeAdminPassword(passwordChangeRequest));
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.changeAdminPassword(passwordChangeRequest));
         }catch (Exception e){
             LOGGER.error("** changeAdminPassword : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
@@ -106,11 +109,23 @@ public class AdminControllerImpl implements AdminController {
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/today/entry")
-    public ResponseEntity<CommonResponse> getAllTodayEntry(int page,int size){
+    public ResponseEntity<CommonResponse> getAllTodayEntry(@RequestParam int page ,@RequestParam int size){
         try {
             return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllTodayEntry(page,size));
         }catch (Exception e){
             LOGGER.error("** getAllEntry: {}",e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+        }
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("/today/utils")
+    public ResponseEntity<CommonResponse> getTodayUtils(){
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(adminService.getTodayUtils());
+        }catch (Exception e){
+            LOGGER.error("** getTodayOutCount : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }

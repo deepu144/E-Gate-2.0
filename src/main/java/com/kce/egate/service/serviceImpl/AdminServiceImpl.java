@@ -42,12 +42,15 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final EmailUtils emailUtils;
     private final AdminsRepository adminsRepository;
+    private final EntryServiceImpl entryService;
 
     @Override
     public CommonResponse getAllEntry(
             String rollNumber,
             LocalDate fromDate,
             LocalDate toDate,
+            LocalTime fromTime,
+            LocalTime toTime,
             String batch,
             int page,
             int size,
@@ -55,6 +58,15 @@ public class AdminServiceImpl implements AdminService {
             String orderBy
     ) throws InvalidFilterException, UserNotFoundException {
         List<EntryObject> entryObjects = getAllEntryObject(rollNumber,fromDate,toDate,batch,order,orderBy);
+        if(!(fromTime==null && toTime==null)){
+            if (fromTime == null) fromTime = LocalTime.MIN;
+            if (toTime == null) toTime = LocalTime.MAX;
+            LocalTime finalFromTime = fromTime;
+            LocalTime finalToTime = toTime;
+            entryObjects =  entryObjects.stream()
+                    .filter(e -> !e.getOutTime().isBefore(finalFromTime) && !e.getOutTime().isAfter(finalToTime))
+                    .toList();
+        }
         int fromIndex = Math.min(page * size, entryObjects.size());
         int toIndex = Math.min(fromIndex + size, entryObjects.size());
         List<EntryObject> paginatedEntries = entryObjects.subList(fromIndex, toIndex);
@@ -143,7 +155,7 @@ public class AdminServiceImpl implements AdminService {
                     entryList = entryRepository.findByBatch(batch);
                 }
                 for(Entry entry : entryList){
-                    entryObjects.add(Mapper.convertToEntryObject(entry));
+                    entryObjects.addFirst(Mapper.convertToEntryObject(entry));
                 }
             }
         }else{
@@ -165,10 +177,10 @@ public class AdminServiceImpl implements AdminService {
                 for(Entry entry : entryList){
                     if(toDate!=null){
                         if(toDate.isAfter(entry.getOutDate()) || toDate.equals(entry.getOutDate())){
-                            entryObjects.add(Mapper.convertToEntryObject(entry));
+                            entryObjects.addFirst(Mapper.convertToEntryObject(entry));
                         }
                     }else{
-                        entryObjects.add(Mapper.convertToEntryObject(entry));
+                        entryObjects.addFirst(Mapper.convertToEntryObject(entry));
                     }
                 }
             }
@@ -182,10 +194,10 @@ public class AdminServiceImpl implements AdminService {
             Entry entry = optionalEntry.get();
             if(fromDate !=null) {
                 if(entry.getOutDate().isEqual(fromDate) || entry.getOutDate().isEqual(toDate) || (entry.getOutDate().isAfter(fromDate) && entry.getOutDate().isBefore(toDate))){
-                    entryObjects.add(Mapper.convertToEntryObject(entry));
+                    entryObjects.addFirst(Mapper.convertToEntryObject(entry));
                 }
             }else {
-                entryObjects.add(Mapper.convertToEntryObject(entry));
+                entryObjects.addFirst(Mapper.convertToEntryObject(entry));
             }
         }
     }
@@ -595,6 +607,11 @@ public class AdminServiceImpl implements AdminService {
                 .data(listResponse)
                 .successMessage(Constant.ENTRY_FETCH_SUCCESS)
                 .build();
+    }
+
+    @Override
+    public CommonResponse getTodayUtils() {
+        return entryService.getCommonTodayUtils();
     }
 
     private EntryResponse getEntryResponseObjectFromEntry(Entry entry, BatchInformation information) {

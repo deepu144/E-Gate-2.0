@@ -9,12 +9,15 @@ import javax.management.InvalidAttributeValueException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public interface AdminService {
     CommonResponse getAllEntry(
             String rollNumber,
             LocalDate fromDate,
             LocalDate toDate,
+            LocalTime fromTime,
+            LocalTime toTime,
             String batch,
             int page,
             int size,
@@ -33,4 +36,6 @@ public interface AdminService {
     CommonResponse changeAdminPassword(PasswordChangeRequest passwordChangeRequest) throws InvalidObjectException, PasswordNotMatchException, InvalidAttributeValueException;
 
     CommonResponse getAllTodayEntry(int page,int size) throws UserNotFoundException;
+
+    CommonResponse getTodayUtils();
 }

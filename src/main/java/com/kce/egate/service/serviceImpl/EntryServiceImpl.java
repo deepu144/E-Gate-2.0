@@ -160,6 +160,10 @@ public class EntryServiceImpl implements EntryService {
     @Override
     public CommonResponse getTodayUtils(String header) throws InvalidJWTTokenException, IllegalAccessException {
         authorizeToken(header);
+        return getCommonTodayUtils();
+    }
+
+    public CommonResponse getCommonTodayUtils() {
         Optional<DailyUtils> dailyUtilsOptional = dailyUtilsRepository.findByToday(LocalDate.now());
         if(dailyUtilsOptional.isEmpty()){
             return CommonResponse.builder()
