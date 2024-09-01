@@ -351,7 +351,10 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public CommonResponse addAdmin(String email) throws InvalidEmailException {
+    public CommonResponse addAdmin(String email) throws Exception {
+        if(adminsRepository.existsByAdminEmail(email)){
+            throw new Exception(Constant.ALREADY_ADMIN);
+        }
         EmailDetailRequest request = new EmailDetailRequest();
         String subject = "Welcome to E-Gate 2.0 - Your Admin Access Details";
         String body = """

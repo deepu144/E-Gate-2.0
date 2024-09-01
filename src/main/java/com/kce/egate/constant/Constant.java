@@ -34,4 +34,5 @@ public final class Constant {
     public static final String DIRECTORY_NOT_CREATED = "Something went wrong!, Directory can't able to Created";
     public static final String STUDENT_NOT_FOUND = "Student Not Found in DataBase";
     public static final String PASSWORD_INCORRECT = "Password Incorrect";
+    public static final String ALREADY_ADMIN = "The User is Already Admin";
 }

@@ -25,7 +25,7 @@ public interface AdminService {
             String orderBy
     ) throws InvalidFilterException, UserNotFoundException;
 
-    CommonResponse addAdmin(String email) throws InvalidEmailException;
+    CommonResponse addAdmin(String email) throws Exception;
 
     CommonResponse addBatch(String batch, MultipartFile multipartFile) throws DuplicateInformationFoundException, IOException;
 
