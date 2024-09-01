@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
         HashMap<String,Object> claims = new HashMap<>();
         claims.put("roles",List.of(role));
         String token = jwtUtils.generateToken(claims,email);
-        expireAllExistingToken(email);
+        expireAndDeleteAllExistingToken(email);
         saveToken(token,email);
         return CommonResponse.builder()
                 .code(200)
@@ -84,11 +84,10 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    private void expireAllExistingToken(String email) {
+    private void expireAndDeleteAllExistingToken(String email) {
         var oldTokens = tokenRepository.findByUserEmail(email);
         if(oldTokens.isEmpty()) return;
-        oldTokens.forEach(t -> t.setExpired(true));
-        tokenRepository.saveAll(oldTokens);
+        oldTokens.forEach(token -> tokenRepository.deleteById(token.get_id()));
     }
 
     private void saveToken(String token, String email) {
@@ -119,7 +118,7 @@ public class UserServiceImpl implements UserService {
         HashMap<String,Object> claims = new HashMap<>();
         claims.put("roles",roles);
         String token = jwtUtils.generateToken(claims,email);
-        expireAllExistingToken(email);
+        expireAndDeleteAllExistingToken(email);
         saveToken(token, email);
         return CommonResponse.builder()
                 .code(200)
