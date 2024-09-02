@@ -235,24 +235,19 @@ public class EntryServiceImpl implements EntryService {
     private void updateTodayUtils(boolean check,boolean isStudent) {
         LocalDate today = LocalDate.now();
         Optional<DailyUtils> utilsOptional = dailyUtilsRepository.findByToday(today);
-        DailyUtils dailyUtils;
         if(utilsOptional.isPresent()){
-            dailyUtils = utilsOptional.get();
+            Query query = new Query(Criteria.where("_id").is(utilsOptional.get().get_id()));
+            Update update = new Update();
             if(check){
-                if(isStudent){
-                    dailyUtils.setStudentOutCount(dailyUtils.getStudentOutCount()+1);
-                }else{
-                    dailyUtils.setStaffOutCount(dailyUtils.getStaffOutCount()+1);
-                }
+                if(isStudent) update.inc("studentOutCount",1);
+                else update.inc("staffOutCount",1);
             }else{
-                if(isStudent){
-                    dailyUtils.setStudentInCount(dailyUtils.getStudentInCount()+1);
-                }else{
-                    dailyUtils.setStaffInCount(dailyUtils.getStaffInCount()+1);
-                }
+                if(isStudent) update.inc("studentInCount",1);
+                else update.inc("staffInCount",1);
             }
+            mongoTemplate.findAndModify(query,update, DailyUtils.class,"dailyUtils");
         }else{
-            dailyUtils = new DailyUtils();
+            DailyUtils dailyUtils = new DailyUtils();
             dailyUtils.setUniqueId(UUID.randomUUID().toString());
             dailyUtils.setToday(today);
             if(check){
@@ -280,8 +275,8 @@ public class EntryServiceImpl implements EntryService {
                     dailyUtils.setStaffOutCount(0L);
                 }
             }
+            dailyUtilsRepository.save(dailyUtils);
         }
-        dailyUtilsRepository.save(dailyUtils);
     }
 
     public static String getCollection(String rollNumber) {
