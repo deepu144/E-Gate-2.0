@@ -47,12 +47,12 @@ public class SecurityConfig {
                         .authenticated()
                 )
                 .formLogin(
-                        form -> form.loginPage("/auth/admin/login")
+                        form -> form.loginPage("http://localhost:3000/admin")
                                 .permitAll()
                 )
                 .oauth2Login(
                         login -> login
-                                .loginPage("/auth/admin/login")
+                                .loginPage("http://localhost:3000/admin")
                                 .userInfoEndpoint(
                                         endpoint ->  endpoint.userService(oauth2UserService())
                                 )
