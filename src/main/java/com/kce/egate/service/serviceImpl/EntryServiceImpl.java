@@ -44,7 +44,7 @@ public class EntryServiceImpl implements EntryService {
     private final EntryLoginUtilsRepository loginUtilsRepository;
 
     @Override
-    public CommonResponse addOrUpdateEntry(String rollNumber,String header) throws InvalidBatchException, InvalidAttributeValueException, InvalidJWTTokenException, IllegalAccessException {
+    public synchronized CommonResponse addOrUpdateEntry(String rollNumber,String header) throws InvalidBatchException, InvalidAttributeValueException, InvalidJWTTokenException, IllegalAccessException {
         authorizeToken(header);
         if(rollNumber.length()<5){
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
