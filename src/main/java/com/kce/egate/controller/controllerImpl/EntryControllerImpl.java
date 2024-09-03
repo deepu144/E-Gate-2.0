@@ -29,6 +29,7 @@ public class EntryControllerImpl implements EntryController {
             return ResponseEntity.status(HttpStatus.OK).body(entryService.addOrUpdateEntry(rollNumber,header));
         }catch (Exception e){
             LOG.error("** addOrUpdateEntry : {}",e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
