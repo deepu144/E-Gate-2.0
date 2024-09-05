@@ -26,8 +26,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 553745922740-jmcc24lq9solqj6gorpffodipql6d2ld.apps.googleusercontent.com
-            client-secret: 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
+            client-id: 553745922740-tapavt4hh0vc54ljfj3spmtiloeblp3k.apps.googleusercontent.com
+            client-secret: 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
 server:
   port: 8080
 jwt:
