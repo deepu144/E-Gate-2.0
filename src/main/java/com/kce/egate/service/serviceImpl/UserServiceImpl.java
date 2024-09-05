@@ -125,7 +125,7 @@ public class UserServiceImpl implements UserService {
         return CommonResponse.builder()
                 .code(200)
                 .status(ResponseStatus.SUCCESS)
-                .data(token)
+                .data(Arrays.asList(token,email))
                 .successMessage(Constant.SIGN_IN_SUCCESS)
                 .build();
     }
