@@ -28,6 +28,7 @@ spring:
           google:
             client-id: 553745922740-tapavt4hh0vc54ljfj3spmtiloeblp3k.apps.googleusercontent.com
             client-secret: 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
+          redirect-uri : https://e-gate-20-production.up.railway.app/login/oauth2/code/google
 server:
   port: 8080
 jwt:
