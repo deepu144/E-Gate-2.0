@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface EntryLoginUtilsRepository extends MongoRepository<EntryLoginUtils,String> {
     boolean existsByUniqueId(String uniqueId);
     Optional<EntryLoginUtils> findByEmail(String email);
+    void deleteByUniqueId(String uniqueId);
 }

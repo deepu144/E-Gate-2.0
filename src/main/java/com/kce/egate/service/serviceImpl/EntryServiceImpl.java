@@ -14,6 +14,7 @@ import com.kce.egate.util.JWTUtils;
 import com.kce.egate.util.Mapper;
 import com.kce.egate.util.exceptions.InvalidBatchException;
 import com.kce.egate.util.exceptions.InvalidJWTTokenException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -142,7 +143,7 @@ public class EntryServiceImpl implements EntryService {
                 .build();
     }
 
-    private void authorizeToken(String header) throws InvalidJWTTokenException, IllegalAccessException {
+    private String authorizeToken(String header) throws InvalidJWTTokenException, IllegalAccessException {
         if(header ==null || header.isBlank()){
             throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
         }
@@ -157,6 +158,7 @@ public class EntryServiceImpl implements EntryService {
         if(!jwtUtils.extractValue(token,"roles").equals("USER")){
             throw new IllegalAccessException(ResponseStatus.UNAUTHORIZED.name());
         }
+        return uniqueId;
     }
 
     @Override
@@ -220,12 +222,12 @@ public class EntryServiceImpl implements EntryService {
     }
 
     @Override
-    public CommonResponse userLogout(String email, HttpServletResponse response) throws IllegalAccessException {
-        Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(email);
-        if(loginUtilsOptional.isEmpty()){
+    public CommonResponse userLogout(HttpServletResponse response, HttpServletRequest request) throws IllegalAccessException, InvalidJWTTokenException {
+        String uniqueId = authorizeToken(request.getHeader("Authorization"));
+        if(loginUtilsRepository.existsByUniqueId(uniqueId)){
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
         }
-        loginUtilsRepository.deleteById(loginUtilsOptional.get().get_id());
+        loginUtilsRepository.deleteByUniqueId(uniqueId);
         try {
             response.sendRedirect("http://localhost:3000/entry");
             return null;

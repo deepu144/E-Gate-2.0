@@ -58,9 +58,9 @@ public class EntryControllerImpl implements EntryController {
 
     @Override
     @GetMapping("/logout")
-    public ResponseEntity<CommonResponse> userLogout(@RequestParam String email, HttpServletResponse response){
+    public ResponseEntity<CommonResponse> userLogout(HttpServletResponse response, HttpServletRequest request){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(email,response));
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(response,request));
         }catch (Exception e){
             LOG.error("** userLogout : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));

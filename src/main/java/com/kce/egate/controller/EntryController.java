@@ -17,5 +17,5 @@ public interface EntryController {
     @PostMapping("/login")
     ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request);
     @GetMapping("/logout")
-    ResponseEntity<CommonResponse> userLogout(@RequestParam String email, HttpServletResponse response);
+    ResponseEntity<CommonResponse> userLogout(HttpServletResponse response, HttpServletRequest request);
 }
