@@ -47,10 +47,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
             String name = oAuth2User.getAttribute("name");
             String picture = oAuth2User.getAttribute("picture");
-            String url = String.format("/auth/oauth2/callback?email=%s&name=%s&picture=%s&id=%s",email,name,picture,_id);
+            String url = String.format("https://e-gate-20-production.up.railway.app/auth/oauth2/callback?email=%s&name=%s&picture=%s&id=%s",email,name,picture,_id);
             getRedirectStrategy().sendRedirect(request, response, url);
         }else{
-            String url = "/auth/oauth2/callback?email=&name=&picture=&id=";
+            String url = "https://e-gate-20-production.up.railway.app/auth/oauth2/callback?email=&name=&picture=&id=";
             getRedirectStrategy().sendRedirect(request, response, url);
         }
     }
