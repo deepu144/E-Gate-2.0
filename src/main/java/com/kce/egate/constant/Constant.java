@@ -18,7 +18,6 @@ public final class Constant {
     public static final String PASSWORD_NOT_PROVIDED = "Password is not provided , It's Mandatory";
     public static final String PASSWORD_SIZE_NOT_MATCH = "Password must be at least 8 character";
     public static final String SIGN_IN_SUCCESS = "User Sign-in Success";
-    public static final String LOGOUT_SUCCESS = "Logout Success";
     public static final String UNAUTHORIZED_ADMIN = "UnAuthorized Admin";
     public static final String INVALID_EMAIL = "Invalid Email";
     public static final String ADMIN_ADDED_SUCCESS = "Admin has been Added Successfully!";
@@ -35,4 +34,5 @@ public final class Constant {
     public static final String STUDENT_NOT_FOUND = "Student Not Found in DataBase";
     public static final String PASSWORD_INCORRECT = "Password Incorrect";
     public static final String ALREADY_ADMIN = "The User is Already Admin";
+    public static final String LOGOUT_ERROR = "Error in Logout";
 }

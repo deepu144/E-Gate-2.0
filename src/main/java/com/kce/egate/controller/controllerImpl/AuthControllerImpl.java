@@ -8,6 +8,7 @@ import com.kce.egate.request.VerifyOTPRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -60,9 +61,9 @@ public class AuthControllerImpl implements AuthController {
     }
 
     @GetMapping("/logout")
-    public ResponseEntity<CommonResponse> logout(HttpServletRequest request){
+    public ResponseEntity<CommonResponse> logout(HttpServletRequest request, HttpServletResponse response){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(userService.logout(request));
+            return ResponseEntity.status(HttpStatus.OK).body(userService.logout(request,response));
         }catch (Exception e){
             log.error("** logout: {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));

@@ -3,6 +3,7 @@ package com.kce.egate.controller;
 import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,5 +17,5 @@ public interface EntryController {
     @PostMapping("/login")
     ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request);
     @GetMapping("/logout")
-    ResponseEntity<CommonResponse> userLogout(String email);
+    ResponseEntity<CommonResponse> userLogout(@RequestParam String email, HttpServletResponse response);
 }

@@ -4,6 +4,7 @@ import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.util.exceptions.InvalidBatchException;
 import com.kce.egate.util.exceptions.InvalidJWTTokenException;
+import jakarta.servlet.http.HttpServletResponse;
 
 import javax.management.InvalidAttributeValueException;
 
@@ -14,5 +15,5 @@ public interface EntryService {
 
     CommonResponse userLogin(AuthenticationRequest request);
 
-    CommonResponse userLogout(String email) throws IllegalAccessException;
+    CommonResponse userLogout(String email, HttpServletResponse response) throws IllegalAccessException;
 }

@@ -6,6 +6,7 @@ import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.EntryService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +58,9 @@ public class EntryControllerImpl implements EntryController {
 
     @Override
     @GetMapping("/logout")
-    public ResponseEntity<CommonResponse> userLogout(@RequestParam String email){
+    public ResponseEntity<CommonResponse> userLogout(@RequestParam String email, HttpServletResponse response){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(email));
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(email,response));
         }catch (Exception e){
             LOG.error("** userLogout : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));

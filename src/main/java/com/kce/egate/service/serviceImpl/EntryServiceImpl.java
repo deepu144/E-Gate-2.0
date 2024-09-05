@@ -14,6 +14,7 @@ import com.kce.egate.util.JWTUtils;
 import com.kce.egate.util.Mapper;
 import com.kce.egate.util.exceptions.InvalidBatchException;
 import com.kce.egate.util.exceptions.InvalidJWTTokenException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -25,6 +26,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import javax.management.InvalidAttributeValueException;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
@@ -218,18 +220,23 @@ public class EntryServiceImpl implements EntryService {
     }
 
     @Override
-    public CommonResponse userLogout(String email) throws IllegalAccessException {
+    public CommonResponse userLogout(String email, HttpServletResponse response) throws IllegalAccessException {
         Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(email);
         if(loginUtilsOptional.isEmpty()){
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
         }
         loginUtilsRepository.deleteById(loginUtilsOptional.get().get_id());
-        return CommonResponse.builder()
-                .code(200)
-                .status(ResponseStatus.SUCCESS)
-                .data(null)
-                .successMessage(Constant.LOGOUT_SUCCESS)
-                .build();
+        try {
+            response.sendRedirect("http://localhost:3000/entry");
+            return null;
+        } catch (IOException e) {
+            return CommonResponse.builder()
+                    .code(400)
+                    .status(ResponseStatus.FAILED)
+                    .data(null)
+                    .errorMessage(Constant.LOGOUT_ERROR)
+                    .build();
+        }
     }
 
     private void updateTodayUtils(boolean check,boolean isStudent) {

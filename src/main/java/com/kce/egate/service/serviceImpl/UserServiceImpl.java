@@ -22,11 +22,13 @@ import com.kce.egate.util.JWTUtils;
 import com.kce.egate.util.exceptions.InvalidPassword;
 import com.kce.egate.util.exceptions.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import javax.management.InvalidAttributeValueException;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
@@ -129,18 +131,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResponse logout(HttpServletRequest request) {
+    public CommonResponse logout(HttpServletRequest request, HttpServletResponse response) {
         final String authHeader = request.getHeader("Authorization");
         var jwtToken = authHeader.substring(7);
         var userEmail = jwtUtils.extractUsername(jwtToken);
         tokenRepository.deleteTokensByUserEmail(userEmail);
         SecurityContextHolder.clearContext();
-        return CommonResponse.builder()
-                .code(200)
-                .status(ResponseStatus.SUCCESS)
-                .data(null)
-                .successMessage(Constant.LOGOUT_SUCCESS)
-                .build();
+        try {
+            response.sendRedirect("http://localhost:3000/admin");
+            return null;
+        } catch (IOException e) {
+            return CommonResponse.builder()
+                    .code(400)
+                    .status(ResponseStatus.FAILED)
+                    .data(null)
+                    .errorMessage(Constant.LOGOUT_ERROR)
+                    .build();
+        }
     }
 
     @Override

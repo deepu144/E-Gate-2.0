@@ -5,6 +5,7 @@ import com.kce.egate.request.PasswordChangeOTPRequest;
 import com.kce.egate.request.VerifyOTPRequest;
 import com.kce.egate.response.CommonResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -15,7 +16,7 @@ public interface AuthController {
     @PostMapping("/login")
     ResponseEntity<CommonResponse> userSignIn(@RequestBody @Valid AuthenticationRequest request , BindingResult result);
     @GetMapping("/logout")
-    ResponseEntity<CommonResponse> logout(HttpServletRequest request);
+    ResponseEntity<CommonResponse> logout(HttpServletRequest request, HttpServletResponse response);
     @GetMapping("/oauth2/callback")
     ResponseEntity<CommonResponse> oauth2Callback(@RequestParam("email") String email,
                                                   @RequestParam("name") String name,
