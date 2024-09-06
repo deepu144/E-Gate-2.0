@@ -72,8 +72,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String encodedResponse = Base64.getEncoder().encodeToString(jsonResponse.getBytes(StandardCharsets.UTF_8));
         LOGGER.info("** loginSuccess {}",encodedResponse);
         LOGGER.info("** loginSuccess {}",commonResponse);
-        String redirectUrl = "http://localhost:3000/auth/oauth2/callback"
-                + "?data=" + URLEncoder.encode(encodedResponse, StandardCharsets.UTF_8);
+        String redirectUrl = String.format("http://localhost:3000/auth/oauth2/callback?data=%s",URLEncoder.encode(encodedResponse, StandardCharsets.UTF_8));
         LOGGER.info("Redirect URL: {}", redirectUrl);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
