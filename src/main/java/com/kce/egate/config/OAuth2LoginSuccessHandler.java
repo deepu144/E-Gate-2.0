@@ -62,11 +62,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
         }
         CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id);
-        Cookie cookie = new Cookie("response",commonResponse.toString());
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(300);
-        cookie.setPath("/");
-        response.addCookie(cookie);
+//        Cookie cookie = new Cookie("response",commonResponse.toString());
+//        cookie.setHttpOnly(true);
+//        cookie.setMaxAge(300);
+//        cookie.setPath("/");
+//        response.addCookie(cookie);
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonResponse = objectMapper.writeValueAsString(commonResponse);
         String encodedResponse = Base64.getEncoder().encodeToString(jsonResponse.getBytes(StandardCharsets.UTF_8));
