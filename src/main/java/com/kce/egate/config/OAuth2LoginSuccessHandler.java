@@ -65,6 +65,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         Cookie cookie = new Cookie("response",commonResponse.toString());
         cookie.setHttpOnly(true);
         cookie.setMaxAge(300);
+        cookie.setPath("/");
         response.addCookie(cookie);
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonResponse = objectMapper.writeValueAsString(commonResponse);
