@@ -1,9 +1,12 @@
 package com.kce.egate.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kce.egate.entity.Admins;
 import com.kce.egate.entity.User;
 import com.kce.egate.repository.AdminsRepository;
 import com.kce.egate.repository.UserRepository;
+import com.kce.egate.response.CommonResponse;
+import com.kce.egate.service.serviceImpl.UserServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Optional;
 
 @Component
@@ -23,16 +29,20 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AdminsRepository adminsRepository;
+    @Autowired
+    private UserServiceImpl userService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
+        String name = oAuth2User.getAttribute("name");
+        String picture = oAuth2User.getAttribute("picture");
         var admins = adminsRepository.findAll()
                 .parallelStream()
                 .map(Admins::getAdminEmail)
                 .toList();
-        String _id;
+        String _id = null;
         if(admins.contains(email)){
             Optional<User> userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) {
@@ -45,14 +55,14 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }else{
                 _id = userOptional.get().get_id();
             }
-            String name = oAuth2User.getAttribute("name");
-            String picture = oAuth2User.getAttribute("picture");
-            String url = String.format("https://e-gate-20-production.up.railway.app/auth/oauth2/callback?email=%s&name=%s&picture=%s&id=%s",email,name,picture,_id);
-            getRedirectStrategy().sendRedirect(request, response, url);
-        }else{
-            String url = "https://e-gate-20-production.up.railway.app/auth/oauth2/callback?email=&name=&picture=&id=";
-            getRedirectStrategy().sendRedirect(request, response, url);
         }
+        CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonResponse = objectMapper.writeValueAsString(commonResponse);
+        String encodedResponse = Base64.getEncoder().encodeToString(jsonResponse.getBytes(StandardCharsets.UTF_8));
+        String redirectUrl = "http://localhost:3000/auth/oauth2/callback"
+                + "?data=" + URLEncoder.encode(encodedResponse, StandardCharsets.UTF_8);
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }
 

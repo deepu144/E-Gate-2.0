@@ -102,19 +102,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResponse oauth2Callback(String email,String name,String picture,String id) throws IllegalAccessException {
-        if(email.isBlank()){
-            throw new IllegalAccessException(Constant.UNAUTHORIZED_ADMIN);
-        }
+    public CommonResponse oauth2Callback(String email,String name,String picture,String id) {
         var admins = adminsRepository.findAll()
                 .parallelStream()
                 .map(Admins::getAdminEmail)
                 .toList();
-        if(!admins.contains(email)){
-            throw new IllegalAccessException(Constant.UNAUTHORIZED_ADMIN);
-        }
-        if(!userRepository.existsById(id)){
-            throw new IllegalAccessException(Constant.UNAUTHORIZED_ADMIN);
+        if(id==null || email==null || email.isBlank() || !admins.contains(email) || !userRepository.existsById(id)){
+            return CommonResponse.builder()
+                    .code(403)
+                    .status(ResponseStatus.UNAUTHORIZED)
+                    .data(null)
+                    .errorMessage(Constant.UNAUTHORIZED_ADMIN)
+                    .build();
         }
         List<String> roles = List.of("ADMIN");
         HashMap<String,Object> claims = new HashMap<>();
