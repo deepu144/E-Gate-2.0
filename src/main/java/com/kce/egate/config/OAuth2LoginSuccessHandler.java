@@ -68,7 +68,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         LOGGER.info("** loginSuccess {}",commonResponse);
         String redirectUrl = "http://localhost:3000/auth/oauth2/callback"
                 + "?data=" + URLEncoder.encode(encodedResponse, StandardCharsets.UTF_8);
+        LOGGER.info("Redirect URL: {}", redirectUrl);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }
-
