@@ -1,6 +1,7 @@
 package com.kce.egate.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kce.egate.controller.controllerImpl.AdminControllerImpl;
 import com.kce.egate.entity.Admins;
 import com.kce.egate.entity.User;
 import com.kce.egate.repository.AdminsRepository;
@@ -9,6 +10,8 @@ import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.serviceImpl.UserServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +34,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private AdminsRepository adminsRepository;
     @Autowired
     private UserServiceImpl userService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminControllerImpl.class);
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -60,6 +64,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonResponse = objectMapper.writeValueAsString(commonResponse);
         String encodedResponse = Base64.getEncoder().encodeToString(jsonResponse.getBytes(StandardCharsets.UTF_8));
+        LOGGER.info("** loginSuccess {}",encodedResponse);
         String redirectUrl = "http://localhost:3000/auth/oauth2/callback"
                 + "?data=" + URLEncoder.encode(encodedResponse, StandardCharsets.UTF_8);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
