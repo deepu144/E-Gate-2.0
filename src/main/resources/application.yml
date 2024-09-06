@@ -3,11 +3,11 @@ spring:
     name: E-Gate-2.0
   data:
     mongodb:
-#      uri: mongodb+srv://deepu:deepu@demo-deploy.h6ngd.mongodb.net/?retryWrites=true&w=majority&appName=Demo-Deploy
+      uri: mongodb+srv://deepu:deepu@demo-deploy.h6ngd.mongodb.net/?retryWrites=true&w=majority&appName=Demo-Deploy
   #      host: host.docker.internal
-      port: 27017
+#      port: 27017
       database: e-gate
-      host: localhost
+#      host: localhost
   banner:
     location: E-Gate_v2.0-Banner.txt
   mail:
