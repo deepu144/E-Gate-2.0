@@ -8,6 +8,7 @@ import com.kce.egate.repository.AdminsRepository;
 import com.kce.egate.repository.UserRepository;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.serviceImpl.UserServiceImpl;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -61,6 +62,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
         }
         CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id);
+        Cookie cookie = new Cookie("response",commonResponse.toString());
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(300);
+        response.addCookie(cookie);
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonResponse = objectMapper.writeValueAsString(commonResponse);
         String encodedResponse = Base64.getEncoder().encodeToString(jsonResponse.getBytes(StandardCharsets.UTF_8));
