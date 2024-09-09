@@ -7,6 +7,7 @@ import com.kce.egate.repository.AdminsRepository;
 import com.kce.egate.repository.UserRepository;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.serviceImpl.UserServiceImpl;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,28 +57,40 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 _id = userOptional.get().get_id();
             }
         }
-        String role = request.getParameter("role");
+        String role = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("role".equals(cookie.getName())) {
+                    role = cookie.getValue();
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    response.addCookie(cookie);
+                }
+            }
+        }
         System.out.println(role+ "  +++++++++++++++++++++++++++++++  ");
-        if(role==null) return;
-        CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id,role);
-        Map<String,Object> responseData = new HashMap<>();
-        responseData.put("code",commonResponse.getCode());
-        responseData.put("status",commonResponse.getStatus());
-        responseData.put("successMessage",commonResponse.getSuccessMessage());
-        responseData.put("errorMessage",commonResponse.getErrorMessage());
-        responseData.put("data",commonResponse.getData());
+        if(role!=null) {
+            CommonResponse commonResponse = userService.oauth2Callback(email, name, picture, _id, role);
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("code", commonResponse.getCode());
+            responseData.put("status", commonResponse.getStatus());
+            responseData.put("successMessage", commonResponse.getSuccessMessage());
+            responseData.put("errorMessage", commonResponse.getErrorMessage());
+            responseData.put("data", commonResponse.getData());
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonResponse = objectMapper.writeValueAsString(responseData);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonResponse = objectMapper.writeValueAsString(responseData);
 
-        response.setContentType("text/html");
-        String script = String.format("""
-                                    <script>
-                                    window.opener.postMessage(%s, '*');
-                                    window.close();
-                                    </script>
-                                    """, jsonResponse
-        );
-        response.getWriter().write(script);
+            response.setContentType("text/html");
+            String script = String.format("""
+                    <script>
+                    window.opener.postMessage(%s, '*');
+                    window.close();
+                    </script>
+                    """, jsonResponse
+            );
+            response.getWriter().write(script);
+        }
     }
 }
