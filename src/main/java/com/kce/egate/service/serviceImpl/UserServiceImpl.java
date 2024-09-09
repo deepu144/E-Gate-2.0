@@ -439,15 +439,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResponse beforeOAuth2(String email, String role) {
-        authRepository.deleteAllByEmail(email);
+    public CommonResponse beforeOAuth2(String role) {
+        authRepository.deleteAll();
         Auth auth = new Auth();
-        auth.setEmail(email);
         auth.setRole(role);
         authRepository.save(auth);
         return CommonResponse.builder()
                 .code(201)
-                .data(email)
+                .data(role)
                 .status(ResponseStatus.CREATED)
                 .build();
     }

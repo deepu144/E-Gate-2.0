@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -63,9 +64,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
         }
         String role;
-        Optional<Auth> authOptional = authRepository.findByEmail(email);
-        if(authOptional.isPresent()){
-            role = authOptional.get().getRole();
+        List<Auth> authList = authRepository.findAll();
+        if(authList.size()==1){
+            role = authList.getFirst().getRole();
             CommonResponse commonResponse = userService.oauth2Callback(email, name, picture, _id, role);
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("code", commonResponse.getCode());
@@ -84,8 +85,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                     """, jsonResponse
             );
             response.getWriter().write(script);
-            authRepository.deleteById(authOptional.get().get_id());
+            authRepository.deleteAll();
         }else{
+            authRepository.deleteAll();
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("code", 500);
             responseData.put("status", ResponseStatus.UNAUTHORIZED);

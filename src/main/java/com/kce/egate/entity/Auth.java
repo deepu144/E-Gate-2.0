@@ -12,6 +12,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class Auth {
     private ObjectId _id;
-    private String email;
     private String role;
 }

@@ -18,5 +18,5 @@ public interface UserService {
     CommonResponse forgotPassword(String email) throws UserNotFoundException;
     CommonResponse verifyOtp(VerifyOTPRequest request) throws UserNotFoundException, IllegalAccessException, InvalidAttributeValueException;
     CommonResponse changePassword(String uniqueId, PasswordChangeOTPRequest request) throws IllegalAccessException, UserNotFoundException;
-    CommonResponse beforeOAuth2(String email, String role);
+    CommonResponse beforeOAuth2(String role);
 }
