@@ -107,7 +107,7 @@ public class AuthControllerImpl implements AuthController {
     @PostMapping("/before/oAuth2")
     public ResponseEntity<CommonResponse> beforeOAuth2(@RequestParam String role){
         try{
-            return ResponseEntity.status(HttpStatus.CREATED).body(userService.beforeOAuth2(role));
+            return ResponseEntity.status(HttpStatus.OK).body(userService.beforeOAuth2(role));
         }catch(Exception e) {
             log.error("** beforeOAuth2: {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
