@@ -224,7 +224,7 @@ public class EntryServiceImpl implements EntryService {
         return CommonResponse.builder()
                 .code(200)
                 .status(ResponseStatus.SUCCESS)
-                .data(token)
+                .data(List.of(token,userName))
                 .successMessage(Constant.SIGN_IN_SUCCESS)
                 .build();
     }
