@@ -61,14 +61,15 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("role".equals(cookie.getName())) {
+                System.out.println(cookie.toString());
+                if ("role".equalsIgnoreCase(cookie.getName())) {
                     role = cookie.getValue();
                     cookie.setMaxAge(0);
                     cookie.setPath("/");
                     response.addCookie(cookie);
                 }
             }
-        }
+        }else System.out.println("Cookie is null");
         System.out.println(role+ "  +++++++++++++++++++++++++++++++  ");
         if(role!=null) {
             CommonResponse commonResponse = userService.oauth2Callback(email, name, picture, _id, role);
