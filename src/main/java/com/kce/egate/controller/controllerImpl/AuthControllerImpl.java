@@ -46,20 +46,6 @@ public class AuthControllerImpl implements AuthController {
         }
     }
 
-//    @GetMapping("/oauth2/callback")
-//    public ResponseEntity<CommonResponse> oauth2Callback(@RequestParam("email") String email,
-//                                                         @RequestParam("name") String name,
-//                                                         @RequestParam("picture") String picture,
-//                                                         @RequestParam("id") String id
-//                                                         ) {
-//        try {
-//            return ResponseEntity.status(HttpStatus.OK).body(userService.oauth2Callback(email,name,picture,id));
-//        }catch (Exception e){
-//            log.error("** oauth2Callback: {}",e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
-//        }
-//    }
-
     @GetMapping("/logout")
     public ResponseEntity<CommonResponse> logout(HttpServletRequest request, HttpServletResponse response){
         try {

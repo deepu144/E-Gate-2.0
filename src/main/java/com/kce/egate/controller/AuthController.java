@@ -17,12 +17,6 @@ public interface AuthController {
     ResponseEntity<CommonResponse> userSignIn(@RequestBody @Valid AuthenticationRequest request , BindingResult result);
     @GetMapping("/logout")
     ResponseEntity<CommonResponse> logout(HttpServletRequest request, HttpServletResponse response);
-//    @GetMapping("/oauth2/callback")
-//    ResponseEntity<CommonResponse> oauth2Callback(@RequestParam("email") String email,
-//                                                  @RequestParam("name") String name,
-//                                                  @RequestParam("picture") String picture,
-//                                                  @RequestParam("id") String id
-//    );
     @PostMapping("/pwd/forgot")
     ResponseEntity<CommonResponse> forgotPassword(@RequestParam String email);
     @PostMapping("/pwd/otp/verify")

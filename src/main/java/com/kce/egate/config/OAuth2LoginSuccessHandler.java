@@ -1,18 +1,14 @@
 package com.kce.egate.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kce.egate.controller.controllerImpl.AdminControllerImpl;
 import com.kce.egate.entity.Admins;
 import com.kce.egate.entity.User;
 import com.kce.egate.repository.AdminsRepository;
 import com.kce.egate.repository.UserRepository;
 import com.kce.egate.response.CommonResponse;
 import com.kce.egate.service.serviceImpl.UserServiceImpl;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,9 +16,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -35,7 +30,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private AdminsRepository adminsRepository;
     @Autowired
     private UserServiceImpl userService;
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminControllerImpl.class);
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -62,18 +56,24 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
         }
         CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id);
-//        Cookie cookie = new Cookie("response",commonResponse.toString());
-//        cookie.setHttpOnly(true);
-//        cookie.setMaxAge(300);
-//        cookie.setPath("/");
-//        response.addCookie(cookie);
+        Map<String,Object> responseData = new HashMap<>();
+        responseData.put("code",commonResponse.getCode());
+        responseData.put("status",commonResponse.getStatus());
+        responseData.put("successMessage",commonResponse.getSuccessMessage());
+        responseData.put("errorMessage",commonResponse.getErrorMessage());
+        responseData.put("data",commonResponse.getData());
+
         ObjectMapper objectMapper = new ObjectMapper();
-        String jsonResponse = objectMapper.writeValueAsString(commonResponse);
-        String encodedResponse = Base64.getEncoder().encodeToString(jsonResponse.getBytes(StandardCharsets.UTF_8));
-        LOGGER.info("** loginSuccess {}",encodedResponse);
-        LOGGER.info("** loginSuccess {}",commonResponse);
-        String redirectUrl = String.format("http://localhost:3000/auth/oauth2/callback?data=%s",URLEncoder.encode(encodedResponse, StandardCharsets.UTF_8));
-        LOGGER.info("Redirect URL: {}", redirectUrl);
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        String jsonResponse = objectMapper.writeValueAsString(responseData);
+
+        response.setContentType("text/html");
+        String script = String.format("""
+                                    <script>
+                                    window.opener.postMessage(%s, '*');
+                                    window.close();
+                                    </script>
+                                    """, jsonResponse
+        );
+        response.getWriter().write(script);
     }
 }
