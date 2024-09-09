@@ -43,6 +43,7 @@ public class UserServiceImpl implements UserService {
     private final EmailUtils emailUtils;
     private final OtpInfoRepository otpInfoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntryServiceImpl entryService;
     private static final Long EXPIRE_TIME = 300000L;
 
     @Override
@@ -102,7 +103,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResponse oauth2Callback(String email,String name,String picture,String id) {
+    public CommonResponse oauth2Callback(String email,String name,String picture,String id,String role) {
         var admins = adminsRepository.findAll()
                 .parallelStream()
                 .map(Admins::getAdminEmail)
@@ -115,18 +116,22 @@ public class UserServiceImpl implements UserService {
                     .errorMessage(Constant.UNAUTHORIZED_ADMIN)
                     .build();
         }
-        List<String> roles = List.of("ADMIN");
-        HashMap<String,Object> claims = new HashMap<>();
-        claims.put("roles",roles);
-        String token = jwtUtils.generateToken(claims,email);
-        expireAndDeleteAllExistingToken(email);
-        saveToken(token, email);
-        return CommonResponse.builder()
-                .code(200)
-                .status(ResponseStatus.SUCCESS)
-                .data(Arrays.asList(token,email))
-                .successMessage(Constant.SIGN_IN_SUCCESS)
-                .build();
+        if(role.equalsIgnoreCase("admin")){
+            HashMap<String,Object> claims = new HashMap<>();
+            List<String> adminRoles = List.of("ADMIN");
+            claims.put("roles",adminRoles);
+            expireAndDeleteAllExistingToken(email);
+            String token = jwtUtils.generateToken(claims,email);
+            saveToken(token, email);
+            return CommonResponse.builder()
+                    .code(200)
+                    .status(ResponseStatus.SUCCESS)
+                    .data(Arrays.asList(token,email))
+                    .successMessage(Constant.SIGN_IN_SUCCESS)
+                    .build();
+        }else{
+            return entryService.checkAndGetUserToken(email);
+        }
     }
 
     @Override

@@ -53,12 +53,12 @@ public class SecurityConfig {
                         )
                 )
                 .formLogin(
-                        form -> form.loginPage("http://localhost:3000/admin")
+                        form -> form.loginPage("https://egate20.vercel.app/admin")
                                 .permitAll()
                 )
                 .oauth2Login(
                         login -> login
-                                .loginPage("http://localhost:3000/admin")
+                                .loginPage("https://egate20.vercel.app/admin")
                                 .userInfoEndpoint(
                                         endpoint ->  endpoint.userService(oauth2UserService())
                                 )
@@ -105,7 +105,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList("http://localhost:8080","http://localhost:3000","https://e-gate-20-production.up.railway.app"));
+        config.setAllowedOrigins(Arrays.asList("http://localhost:8080","http://localhost:3000","https://e-gate-20-production.up.railway.app","https://egate20.vercel.app"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.addExposedHeader("Authorization");

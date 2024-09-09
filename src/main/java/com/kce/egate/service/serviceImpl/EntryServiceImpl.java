@@ -203,20 +203,24 @@ public class EntryServiceImpl implements EntryService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(userDetails.getUsername());
+        return checkAndGetUserToken(userDetails.getUsername());
+    }
+
+    public CommonResponse checkAndGetUserToken(String userName) {
+        Optional<EntryLoginUtils> loginUtilsOptional = loginUtilsRepository.findByEmail(userName);
         if (loginUtilsOptional.isPresent()) {
             EntryLoginUtils entryLoginUtils = loginUtilsOptional.get();
             loginUtilsRepository.deleteById(entryLoginUtils.get_id());
         }
         EntryLoginUtils loginUtils = new EntryLoginUtils();
-        loginUtils.setEmail(userDetails.getUsername());
+        loginUtils.setEmail(userName);
         String uniqueId = UUID.randomUUID().toString();
         loginUtils.setUniqueId(uniqueId);
         loginUtilsRepository.save(loginUtils);
         HashMap<String,Object> claims = new HashMap<>();
         claims.put("roles","USER");
         claims.put("uniqueId",uniqueId);
-        String token = jwtUtils.generateUserToken(claims,userDetails);
+        String token = jwtUtils.generateUserToken(claims, userName);
         return CommonResponse.builder()
                 .code(200)
                 .status(ResponseStatus.SUCCESS)

@@ -33,8 +33,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-
-        System.out.println(request.getRequestURI()+" ::::: "+request.getRequestURL());
+//        System.out.println();
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
@@ -57,7 +56,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 _id = userOptional.get().get_id();
             }
         }
-        CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id);
+        String role = request.getParameter("role");
+        CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id,role);
         Map<String,Object> responseData = new HashMap<>();
         responseData.put("code",commonResponse.getCode());
         responseData.put("status",commonResponse.getStatus());
