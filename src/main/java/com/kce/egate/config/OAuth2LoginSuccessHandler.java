@@ -57,6 +57,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
         }
         String role = request.getParameter("role");
+        System.out.println(role+ "  +++++++++++++++++++++++++++++++  ");
+        if(role==null) return;
         CommonResponse commonResponse = userService.oauth2Callback(email,name,picture,_id,role);
         Map<String,Object> responseData = new HashMap<>();
         responseData.put("code",commonResponse.getCode());
