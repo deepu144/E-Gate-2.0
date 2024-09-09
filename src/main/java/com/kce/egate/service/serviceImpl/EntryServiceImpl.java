@@ -148,7 +148,11 @@ public class EntryServiceImpl implements EntryService {
             throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
         }
         String token = header.substring(7);
-        if(!(jwtUtils.extractIssuer(token).equals("717822F110 717822P212"))){
+        String issuer = jwtUtils.extractIssuer(token);
+        if(issuer==null){
+            throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
+        }
+        if(!issuer.equals("717822F110 717822P212")){
             throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
         }
         String uniqueId = jwtUtils.extractValue(token,"uniqueId");
