@@ -23,5 +23,6 @@ public interface AuthController {
     ResponseEntity<CommonResponse> verifyOtp(@RequestBody @Valid VerifyOTPRequest request , BindingResult result);
     @PostMapping("/pwd/change/{unique-id}")
     ResponseEntity<CommonResponse> changePassword(@PathVariable("unique-id") String uniqueId , @RequestBody @Valid PasswordChangeOTPRequest request , BindingResult result);
-
+    @PostMapping("/before/oAuth2")
+    ResponseEntity<CommonResponse> beforeOAuth2(@RequestParam String email,@RequestParam String role);
 }

@@ -1,16 +1,10 @@
 package com.kce.egate.service.serviceImpl;
 
 import com.kce.egate.constant.Constant;
-import com.kce.egate.entity.Admins;
-import com.kce.egate.entity.OtpInfo;
-import com.kce.egate.entity.Token;
-import com.kce.egate.entity.User;
+import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.TokenType;
 import com.kce.egate.enumeration.ResponseStatus;
-import com.kce.egate.repository.AdminsRepository;
-import com.kce.egate.repository.OtpInfoRepository;
-import com.kce.egate.repository.TokenRepository;
-import com.kce.egate.repository.UserRepository;
+import com.kce.egate.repository.*;
 import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.request.EmailDetailRequest;
 import com.kce.egate.request.PasswordChangeOTPRequest;
@@ -44,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final OtpInfoRepository otpInfoRepository;
     private final PasswordEncoder passwordEncoder;
     private final EntryServiceImpl entryService;
+    private final AuthRepository authRepository;
     private static final Long EXPIRE_TIME = 300000L;
 
     @Override
@@ -440,6 +435,20 @@ public class UserServiceImpl implements UserService {
                 .data(request.getEmail())
                 .successMessage(Constant.PASSWORD_CHANGED_SUCCESS)
                 .status(ResponseStatus.UPDATED)
+                .build();
+    }
+
+    @Override
+    public CommonResponse beforeOAuth2(String email, String role) {
+        authRepository.deleteAllByEmail(email);
+        Auth auth = new Auth();
+        auth.setEmail(email);
+        auth.setRole(role);
+        authRepository.save(auth);
+        return CommonResponse.builder()
+                .code(201)
+                .data(email)
+                .status(ResponseStatus.CREATED)
                 .build();
     }
 
