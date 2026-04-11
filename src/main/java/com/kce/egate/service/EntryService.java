@@ -2,8 +2,8 @@ package com.kce.egate.service;
 
 import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
-import com.kce.egate.util.exceptions.InvalidBatchException;
-import com.kce.egate.util.exceptions.InvalidJWTTokenException;
+import com.kce.egate.exceptions.InvalidBatchException;
+import com.kce.egate.exceptions.InvalidJWTTokenException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

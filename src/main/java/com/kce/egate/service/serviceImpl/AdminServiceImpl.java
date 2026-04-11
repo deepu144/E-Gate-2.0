@@ -4,10 +4,8 @@ import com.kce.egate.constant.Constant;
 import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.ResponseStatus;
 import com.kce.egate.enumeration.Status;
-import com.kce.egate.repository.AdminsRepository;
-import com.kce.egate.repository.BatchRepository;
-import com.kce.egate.repository.EntryRepository;
-import com.kce.egate.repository.UserRepository;
+import com.kce.egate.exceptions.*;
+import com.kce.egate.repository.*;
 import com.kce.egate.request.EmailDetailRequest;
 import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.*;
@@ -15,8 +13,8 @@ import com.kce.egate.service.AdminService;
 import com.kce.egate.util.EmailUtils;
 import com.kce.egate.util.FileUtils;
 import com.kce.egate.util.Mapper;
-import com.kce.egate.util.exceptions.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -32,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
@@ -43,6 +42,7 @@ public class AdminServiceImpl implements AdminService {
     private final EmailUtils emailUtils;
     private final AdminsRepository adminsRepository;
     private final EntryServiceImpl entryService;
+    private final IdentityIndexRepository identityIndexRepository;
 
     @Override
     public CommonResponse getAllEntry(
@@ -72,7 +72,12 @@ public class AdminServiceImpl implements AdminService {
         List<EntryObject> paginatedEntries = entryObjects.subList(fromIndex, toIndex);
         List<EntryResponse> entryResponses = new ArrayList<>();
         for(EntryObject entryObject : paginatedEntries){
-            BatchInformation information = mongoTemplate.findOne(new Query().addCriteria(Criteria.where("rollNumber").is(entryObject.getRollNumber())), BatchInformation.class,EntryServiceImpl.getCollection(entryObject.getRollNumber())+"_Information");
+            Optional<IdentityIndex> optionalIdentityIndex = identityIndexRepository.findByRollNumber(entryObject.getRollNumber());
+            if(optionalIdentityIndex.isEmpty()){
+                throw new UserNotFoundException(Constant.STUDENT_NOT_FOUND);
+            }
+            String collection = optionalIdentityIndex.get().getBatch();
+            BatchInformation information = mongoTemplate.findOne(new Query().addCriteria(Criteria.where("rollNumber").is(entryObject.getRollNumber())), BatchInformation.class,collection +"_Information");
             if(information==null){
                 throw new UserNotFoundException(Constant.STUDENT_NOT_FOUND);
             }
@@ -118,16 +123,19 @@ public class AdminServiceImpl implements AdminService {
         }
         if(fromDate!=null && toDate!=null){
             if(toDate.isBefore(fromDate)){
+                log.error("[SERVICE] Invalid Filter, From Date Should be less than or equal to To Date");
                 throw new InvalidFilterException(Constant.INVALID_FILTER);
             }
         }
         if(toDate!=null){
             if(fromDate==null){
+                log.error("[SERVICE] Invalid Filter, Select From Date");
                 throw new InvalidFilterException(Constant.INVALID_FILTER);
             }
         }
         if(fromDate!=null){
             if(toDate==null){
+                log.debug("[SERVICE] Setting toDate to Current Date");
                 toDate = LocalDate.now();
             }
         }
@@ -136,13 +144,14 @@ public class AdminServiceImpl implements AdminService {
         List<EntryObject> entryObjects = new ArrayList<>();
         if(batch!=null && !batch.isEmpty()){
             collection = batch;
-            if(rollNumber!=null && !rollNumber.isEmpty()){
-                collection = EntryServiceImpl.getCollection(rollNumber);
-                if(!collection.equalsIgnoreCase(batch)){
+            if(rollNumber!=null && !rollNumber.isBlank()){
+                Optional<IdentityIndex> optionalIdentityIndex = identityIndexRepository.findByRollNumber(rollNumber);
+                if(optionalIdentityIndex.isEmpty() ||  !optionalIdentityIndex.get().getBatch().equals(batch)){
+                    log.error("[SERVICE] Invalid Filter, RollNumber doesn't belong to Batch");
                     throw new InvalidFilterException(Constant.INVALID_FILTER);
                 }
             }
-            if(rollNumber!=null && !rollNumber.isEmpty()){
+            if(rollNumber!=null && !rollNumber.isBlank()){
                 query.addCriteria(Criteria.where("rollNumber").is(rollNumber));
                 addEntryFromEntryRepository(rollNumber, fromDate, toDate, entryObjects);
             }
@@ -161,7 +170,12 @@ public class AdminServiceImpl implements AdminService {
         }else{
             List<Entry> entryList;
             if(rollNumber!=null && !rollNumber.isEmpty()){
-                collection = EntryServiceImpl.getCollection(rollNumber);
+                Optional<IdentityIndex> optionalIdentityIndex = identityIndexRepository.findByRollNumber(rollNumber);
+                if(optionalIdentityIndex.isEmpty()){
+                    log.error("[SERVICE] RollNumber Not Exists");
+                    throw new InvalidFilterException(Constant.INVALID_FILTER);
+                }
+                collection = optionalIdentityIndex.get().getBatch();
                 query.addCriteria(Criteria.where("rollNumber").is(rollNumber));
                 getEntry(fromDate, toDate, orderBy, collection, query, entryObjects,order);
                 addEntryFromEntryRepository(rollNumber, toDate, toDate, entryObjects);
@@ -192,7 +206,7 @@ public class AdminServiceImpl implements AdminService {
         Optional<Entry> optionalEntry = entryRepository.findByRollNumber(rollNumber);
         if(optionalEntry.isPresent()){
             Entry entry = optionalEntry.get();
-            if(fromDate !=null) {
+            if(fromDate != null) {
                 if(entry.getOutDate().isEqual(fromDate) || entry.getOutDate().isEqual(toDate) || (entry.getOutDate().isAfter(fromDate) && entry.getOutDate().isBefore(toDate))){
                     entryObjects.addFirst(Mapper.convertToEntryObject(entry));
                 }
@@ -595,7 +609,13 @@ public class AdminServiceImpl implements AdminService {
         List<Entry> entryList = entryRepository.findAll(pageable).getContent();
         List<EntryResponse> entryResponses = new ArrayList<>();
         for(Entry entry : entryList){
-            var information = mongoTemplate.findOne(new Query().addCriteria(Criteria.where("rollNumber").is(entry.getRollNumber())), BatchInformation.class,EntryServiceImpl.getCollection(entry.getRollNumber())+"_Information");
+            Optional<IdentityIndex> optionalIdentityIndex = identityIndexRepository.findByRollNumber(entry.getRollNumber());
+            if(optionalIdentityIndex.isEmpty()){
+                log.error("[SERVICE] RollNumber Not Exists");
+                throw new UserNotFoundException(Constant.STUDENT_NOT_FOUND);
+            }
+            String batch = optionalIdentityIndex.get().getBatch();
+            var information = mongoTemplate.findOne(new Query().addCriteria(Criteria.where("rollNumber").is(entry.getRollNumber())), BatchInformation.class,batch +"_Information");
             if(information==null){
                 throw new UserNotFoundException(Constant.STUDENT_NOT_FOUND);
             }

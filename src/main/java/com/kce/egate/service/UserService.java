@@ -4,8 +4,8 @@ import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.request.PasswordChangeOTPRequest;
 import com.kce.egate.request.VerifyOTPRequest;
 import com.kce.egate.response.CommonResponse;
-import com.kce.egate.util.exceptions.InvalidPassword;
-import com.kce.egate.util.exceptions.UserNotFoundException;
+import com.kce.egate.exceptions.InvalidPassword;
+import com.kce.egate.exceptions.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

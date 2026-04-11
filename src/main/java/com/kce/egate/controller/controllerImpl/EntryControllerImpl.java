@@ -20,27 +20,30 @@ import org.springframework.web.bind.annotation.*;
 public class EntryControllerImpl implements EntryController {
 
     private final EntryService entryService;
-    private static final Logger LOG = LoggerFactory.getLogger(EntryControllerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(EntryControllerImpl.class);
 
     @Override
     @PostMapping("/add")
     public ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam String rollNumber,HttpServletRequest request){
         try {
             String header = request.getHeader("Authorization");
-            return ResponseEntity.status(HttpStatus.OK).body(entryService.addOrUpdateEntry(rollNumber,header));
+            log.debug("[CONTROLLER] addOrUpdateEntry method: RollNumber = {}, header = {}", rollNumber, header);
+            return ResponseEntity.status(HttpStatus.OK).body(entryService.addOrUpdateEntry(rollNumber, header));
         }catch (Exception e){
-            LOG.error("** addOrUpdateEntry : {}",e.getMessage());
+            log.error("** addOrUpdateEntry : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
+
     @Override
     @GetMapping("/today/utils")
     public ResponseEntity<CommonResponse> getTodayUtils(HttpServletRequest request){
         try {
             String header = request.getHeader("Authorization");
+            log.debug("[CONTROLLER] getTodayUtils method: header = {}", header);
             return ResponseEntity.status(HttpStatus.OK).body(entryService.getTodayUtils(header));
         }catch (Exception e){
-            LOG.error("** getTodayOutCount : {}",e.getMessage());
+            log.error("** getTodayOutCount : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -49,9 +52,10 @@ public class EntryControllerImpl implements EntryController {
     @PostMapping("/login")
     public ResponseEntity<CommonResponse> userLogin(@RequestBody AuthenticationRequest request){
         try {
+            log.debug("[CONTROLLER] userLogin request for email: {} ", request.getEmail());
             return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogin(request));
         }catch (Exception e){
-            LOG.error("** userLogin : {}",e.getMessage());
+            log.error("** userLogin : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -60,19 +64,21 @@ public class EntryControllerImpl implements EntryController {
     @GetMapping("/logout")
     public ResponseEntity<CommonResponse> userLogout(HttpServletResponse response, HttpServletRequest request){
         try {
+            log.debug("[CONTROLLER] userLogout request received");
             return ResponseEntity.status(HttpStatus.OK).body(entryService.userLogout(response,request));
         }catch (Exception e){
-            LOG.error("** userLogout : {}",e.getMessage());
+            log.error("** userLogout : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
 
-    public CommonResponse setServerError(Exception e){
+    public CommonResponse setServerError(Exception ex){
+        ex.printStackTrace();
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setCode(500);
         commonResponse.setStatus(ResponseStatus.FAILED);
         commonResponse.setData(null);
-        commonResponse.setErrorMessage(e.getMessage());
+        commonResponse.setErrorMessage(ex.getMessage());
         return commonResponse;
     }
 }

@@ -2,7 +2,7 @@ package com.kce.egate.util;
 
 import com.kce.egate.constant.Constant;
 import com.kce.egate.entity.BatchInformation;
-import com.kce.egate.util.exceptions.DuplicateInformationFoundException;
+import com.kce.egate.exceptions.DuplicateInformationFoundException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;

@@ -1,4 +1,4 @@
-package com.kce.egate.util.exceptions;
+package com.kce.egate.exceptions;
 
 
 public class UserNotFoundException extends Exception{

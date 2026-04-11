@@ -1,8 +1,11 @@
 package com.kce.egate.service;
 
+import com.kce.egate.exceptions.DuplicateInformationFoundException;
+import com.kce.egate.exceptions.InvalidFilterException;
+import com.kce.egate.exceptions.PasswordNotMatchException;
+import com.kce.egate.exceptions.UserNotFoundException;
 import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.CommonResponse;
-import com.kce.egate.util.exceptions.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.management.InvalidAttributeValueException;

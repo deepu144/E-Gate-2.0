@@ -10,12 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 public interface EntryController {
-    @PostMapping("/add")
-    ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam  String rollNumber,HttpServletRequest request);
-    @GetMapping("/today/utils")
+    ResponseEntity<CommonResponse> addOrUpdateEntry(@RequestParam String rollNumber,HttpServletRequest request);
     ResponseEntity<CommonResponse> getTodayUtils(HttpServletRequest request);
-    @PostMapping("/login")
     ResponseEntity<CommonResponse> userLogin(AuthenticationRequest request);
-    @GetMapping("/logout")
     ResponseEntity<CommonResponse> userLogout(HttpServletResponse response, HttpServletRequest request);
 }
