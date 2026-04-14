@@ -7,6 +7,7 @@ import com.kce.egate.exceptions.UserNotFoundException;
 import com.kce.egate.request.PasswordChangeRequest;
 import com.kce.egate.response.CommonResponse;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.management.InvalidAttributeValueException;
 import java.io.IOException;
@@ -30,7 +31,7 @@ public interface AdminService {
 
     CommonResponse addAdmin(String email) throws Exception;
 
-    CommonResponse addBatch(String batch, MultipartFile multipartFile) throws DuplicateInformationFoundException, IOException;
+    SseEmitter addBatch(String batch, MultipartFile multipartFile, boolean isIncremental) throws DuplicateInformationFoundException, IOException;
 
     CommonResponse getAllBatch();
 

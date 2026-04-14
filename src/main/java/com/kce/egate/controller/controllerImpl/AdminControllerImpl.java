@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -49,12 +51,14 @@ public class AdminControllerImpl implements AdminController {
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/batch/add")
-    public ResponseEntity<CommonResponse> addBatch(@RequestParam String batch , @RequestParam("file")MultipartFile multipartFile) {
+    public ResponseEntity<SseEmitter> addBatch(@RequestParam String batch,
+                                               @RequestParam boolean isIncremental,
+                                               @RequestParam("file") MultipartFile multipartFile) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(adminService.addBatch(batch,multipartFile));
+            return ResponseEntity.ok(adminService.addBatch(batch,multipartFile, isIncremental));
         }catch (Exception e) {
             LOGGER.error("** addBatch : {}",e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

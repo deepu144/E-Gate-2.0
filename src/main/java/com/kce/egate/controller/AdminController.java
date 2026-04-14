@@ -5,12 +5,12 @@ import com.kce.egate.response.CommonResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 public interface AdminController {
-    @GetMapping("/entry")
     ResponseEntity<CommonResponse> getAllEntry(@RequestParam(required = false) String rollNumber,
                                                @RequestParam(required = false) LocalDate fromDate,
                                                @RequestParam(required = false) LocalDate toDate,
@@ -22,18 +22,11 @@ public interface AdminController {
                                                @RequestParam int page,
                                                @RequestParam int size
     );
-    @GetMapping("/today/entry")
     ResponseEntity<CommonResponse> getAllTodayEntry(@RequestParam int page, @RequestParam int size);
-    @PostMapping("/add")
     ResponseEntity<CommonResponse> addAdmin(@RequestParam String email);
-    @PostMapping("/batch/add")
-    ResponseEntity<CommonResponse> addBatch(@RequestParam String batch, @RequestParam("file") MultipartFile multipartFile);
-    @GetMapping("/batch")
+    ResponseEntity<SseEmitter> addBatch(@RequestParam String batch, boolean isIncremental, @RequestParam("file") MultipartFile multipartFile);
     ResponseEntity<CommonResponse> getAllBatch();
-    @DeleteMapping("/batch")
     ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch);
-    @PutMapping("/pwd/change")
     ResponseEntity<CommonResponse> changeAdminPassword(@RequestBody PasswordChangeRequest passwordChangeRequest);
-    @GetMapping("/today/utils")
     ResponseEntity<CommonResponse> getTodayUtils();
 }

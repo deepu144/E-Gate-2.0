@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -41,6 +42,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EntryServiceImpl implements EntryService {
     private static final Logger log = LoggerFactory.getLogger(EntryServiceImpl.class);
+    @Value("${kce.staffBatchName}")
+    private String staffBatchName;
     private final EntryRepository entryRepository;
     private final MongoTemplate mongoTemplate;
 //    private final BatchRepository batchRepository;
@@ -54,22 +57,20 @@ public class EntryServiceImpl implements EntryService {
     public synchronized CommonResponse addOrUpdateEntry(String rollNumber,String header) throws InvalidBatchException, InvalidAttributeValueException, InvalidJWTTokenException, IllegalAccessException {
         authorizeToken(header);
         log.info("[SERVICE] User Authenticated, entry request: RollNumber = {}", rollNumber);
-        if(rollNumber.length()<5){
-            log.error("[SERVICE] Invalid RollNumber: {} ", rollNumber);
-            throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
-        }
-        Optional<Entry> optionalEntry = entryRepository.findByRollNumber(rollNumber);
+
         Optional<IdentityIndex> optionalIdentityIndex = identityIndexRepository.findByRollNumber(rollNumber);
         if(optionalIdentityIndex.isEmpty()){
             log.error("[SERVICE] RollNumber Unregistered: {} ", rollNumber);
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
+        Optional<Entry> optionalEntry = entryRepository.findByRollNumber(rollNumber);
+
         String batch = optionalIdentityIndex.get().getBatch();
         Query queryForBatchInformation = new Query();
         queryForBatchInformation.addCriteria(Criteria.where("rollNumber").is(rollNumber));
         BatchInformation batchInformation = mongoTemplate.findOne(queryForBatchInformation, BatchInformation.class,batch+"_Information");
         if(batchInformation == null) {
-            log.error("[SERVICE] RollNumber Unregistered: {} ", rollNumber);
+            log.error("[SERVICE] RollNumber {} missing in {}_information", rollNumber, batch);
             throw new InvalidAttributeValueException(Constant.INVALID_ROLL_NUMBER);
         }
         if(optionalEntry.isEmpty()){
@@ -79,6 +80,7 @@ public class EntryServiceImpl implements EntryService {
     }
 
     private CommonResponse deleteEntry(String rollNumber, Entry entry, String batch, BatchInformation batchInformation) {
+        log.info("[SERVICE] Student Coming Inside: RollNumber = {}, batch = {}", rollNumber, batch);
         entry.setInDate(LocalDate.now());
         entry.setInTime(LocalTime.now());
         entry.setStatus(Status.IN);
@@ -86,7 +88,8 @@ public class EntryServiceImpl implements EntryService {
         Query query = new Query();
         query.addCriteria(Criteria.where("rollNumber").is(entry.getRollNumber()));
         BatchEntry batchEntry = mongoTemplate.findOne(query, BatchEntry.class, batch);
-        if(batchEntry == null){
+        if(batchEntry == null) {
+            log.debug("[SERVICE] BatchEntry Document for Student not found. RollNumber {}, creating BatchEntry", rollNumber);
             batchEntry = new BatchEntry();
             batchEntry.setUniqueId(UUID.randomUUID().toString());
             batchEntry.setRollNumber(entry.getRollNumber());
@@ -94,12 +97,13 @@ public class EntryServiceImpl implements EntryService {
             batchEntry.getOutDateList().add(entry.getOutDate());
             batchEntry.getInTimeList().add(entry.getInTime());
             batchEntry.getOutTimeList().add(entry.getOutTime());
-            batchEntry.setTotalEntry(batchEntry.getInDateList().size());
+            batchEntry.setTotalEntry(1L);
             mongoTemplate.save(batchEntry, batch);
         }else{
+            log.debug("[SERVICE] BatchEntry Document for student found. RollNumber {}, Updating entry", rollNumber);
             Query updateQuery = new Query(Criteria.where("_id").is(batchEntry.get_id()));
             Update update = new Update();
-            update.inc("totalEntry", 1);
+            update.inc("totalEntry", 1L);
             update.push("inDateList", entry.getInDate());
             update.push("outDateList", entry.getOutDate());
             update.push("inTimeList", entry.getInTime());
@@ -118,7 +122,9 @@ public class EntryServiceImpl implements EntryService {
                 .status(Status.IN)
                 .build();
         entryRepository.delete(entry);
-        updateTodayUtils(false, rollNumber.length() != 5);
+        log.info("[SERVICE] deleting entry in Entry collection, RollNumber {}", rollNumber);
+        boolean isStudent = !batch.equalsIgnoreCase(staffBatchName);
+        updateTodayUtils(false, isStudent);
         return CommonResponse.builder()
                 .data(response)
                 .successMessage(Constant.ENTRY_DELETED_SUCCESS)
@@ -127,12 +133,9 @@ public class EntryServiceImpl implements EntryService {
                 .build();
     }
 
-    private CommonResponse addEntry(String rollNumber, String batch, BatchInformation batchInformation) throws InvalidBatchException {
-        log.info("[SERVICE] Student Going Out: RollNumber = {}, batch = {}", rollNumber, batch);
-//        if(!batchRepository.existsByBatchName(batch)) {
-//            log.error("[SERVICE] Invalid Batch Name {}. Update Batch Details", batch);
-//            throw new InvalidBatchException(Constant.INVALID_BATCH);
-//        }
+    private CommonResponse addEntry(String rollNumber, String batch, BatchInformation batchInformation) {
+        log.info("[SERVICE] Student Going Outside: RollNumber = {}, batch = {}", rollNumber, batch);
+
         Entry entry = new Entry();
         entry.setUniqueId(UUID.randomUUID().toString());
         entry.setRollNumber(rollNumber);
@@ -141,8 +144,10 @@ public class EntryServiceImpl implements EntryService {
         entry.setOutDate(LocalDate.now());
         entry.setOutTime(LocalTime.now());
         entryRepository.save(entry);
+
         log.debug("[SERVICE] Entry Saved Successfully. Entry: {}", entry);
-        updateTodayUtils(true, rollNumber.length() != 5);
+        boolean isStudent = !batch.equalsIgnoreCase(staffBatchName);
+        updateTodayUtils(true, isStudent);
         EntryResponse entryResponse = EntryResponse.builder()
                 .rollNumber(rollNumber)
                 .name(batchInformation.getName())
@@ -266,7 +271,7 @@ public class EntryServiceImpl implements EntryService {
     @Override
     public CommonResponse userLogout(HttpServletResponse response, HttpServletRequest request) throws IllegalAccessException, InvalidJWTTokenException {
         String uniqueId = authorizeToken(request.getHeader("Authorization"));
-        log.debug("[SERVICE] JWT Token validated, user session: {}", uniqueId);
+        log.debug("[SERVICE] JWT Token validated, deleting user session: {}", uniqueId);
         loginUtilsRepository.deleteByUniqueId(uniqueId);
         try {
             log.debug("[SERVICE] Redirecting to Login page: http://localhost:3000/entry");
@@ -287,6 +292,7 @@ public class EntryServiceImpl implements EntryService {
         LocalDate today = LocalDate.now();
         Optional<DailyUtils> utilsOptional = dailyUtilsRepository.findByToday(today);
         if(utilsOptional.isPresent()){
+            log.debug("[SERVICE] Today's utils found, Updating utils");
             Query query = new Query(Criteria.where("_id").is(utilsOptional.get().get_id()));
             Update update = new Update();
             if(isCheckOut){
@@ -298,6 +304,7 @@ public class EntryServiceImpl implements EntryService {
             }
             mongoTemplate.findAndModify(query,update, DailyUtils.class,"dailyUtils");
         }else{
+            log.debug("[SERVICE] Today's utils not found, Creating utils");
             DailyUtils dailyUtils = new DailyUtils();
             dailyUtils.setUniqueId(UUID.randomUUID().toString());
             dailyUtils.setToday(today);
@@ -329,25 +336,4 @@ public class EntryServiceImpl implements EntryService {
             dailyUtilsRepository.save(dailyUtils);
         }
     }
-
-//    public static String getBatchCollectionName(String rollNumber) {
-//        int rollNumberLength = rollNumber.length();
-//        if(rollNumberLength == 5) return "Staff";
-//        String collection;
-//        int batch = 0;
-//        if(rollNumberLength >= 10 && rollNumberLength <= 12){
-//            batch = Integer.parseInt(rollNumber.substring(4,6)); //717822F110
-//            if(rollNumberLength == 10){
-//                int lateral = Integer.parseInt(rollNumber.substring(7));
-//                if(lateral >= 500){
-//                    batch-=1;
-//                }
-//            }
-//        }else if(rollNumberLength >= 6 && rollNumberLength <= 8){
-//            batch = Integer.parseInt(rollNumber.substring(0,2));
-//        }
-//        int year = (LocalDate.now().getYear() / 100) * 100;
-//        collection = "Batch_" + (year + batch)+ "-" + (year + batch + 4);
-//        return collection;
-//    }
 }

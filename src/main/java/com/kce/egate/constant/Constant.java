@@ -35,4 +35,6 @@ public final class Constant {
     public static final String PASSWORD_INCORRECT = "Password Incorrect";
     public static final String ALREADY_ADMIN = "The User is Already Admin";
     public static final String LOGOUT_ERROR = "Error in Logout, Please log in again";
+    public static final String BATCH_NAME_FORMAT = "Batch Name format: Batch_*";
+    public static final String BATCH_NOT_FOUND = "Batch Not Found";
 }

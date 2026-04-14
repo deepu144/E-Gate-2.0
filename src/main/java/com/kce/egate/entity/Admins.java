@@ -10,4 +10,5 @@ public class Admins {
     @Id
     private String _id;
     private String adminEmail;
+    private String addedBy;
 }
