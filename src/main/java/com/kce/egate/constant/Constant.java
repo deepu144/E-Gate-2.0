@@ -37,4 +37,5 @@ public final class Constant {
     public static final String LOGOUT_ERROR = "Error in Logout, Please log in again";
     public static final String BATCH_NAME_FORMAT = "Batch Name format: Batch_*";
     public static final String BATCH_NOT_FOUND = "Batch Not Found";
+    public static final String OTP_EXPIRED = "OTP is expired";
 }

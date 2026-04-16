@@ -4,6 +4,7 @@ import com.kce.egate.constant.Constant;
 import com.kce.egate.entity.*;
 import com.kce.egate.enumeration.ResponseStatus;
 import com.kce.egate.enumeration.Status;
+import com.kce.egate.enumeration.TokenType;
 import com.kce.egate.repository.*;
 import com.kce.egate.request.AuthenticationRequest;
 import com.kce.egate.response.CommonResponse;
@@ -42,6 +43,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EntryServiceImpl implements EntryService {
     private static final Logger log = LoggerFactory.getLogger(EntryServiceImpl.class);
+    private final TokenRepository tokenRepository;
     @Value("${kce.staffBatchName}")
     private String staffBatchName;
     private final EntryRepository entryRepository;
@@ -167,18 +169,19 @@ public class EntryServiceImpl implements EntryService {
                 .build();
     }
 
-    private String authorizeToken(String header) throws InvalidJWTTokenException, IllegalAccessException {
+    private List<String> authorizeToken(String header) throws InvalidJWTTokenException, IllegalAccessException {
         if(header == null || header.isBlank()){
             log.error("[SERVICE] Authorization header is null or blank");
             throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
         }
         String token = header.substring(7);
         String issuer = jwtUtils.extractIssuer(token);
-        if(issuer == null || !issuer.equals("717822F110 717822P212")){
+        if(issuer == null || !issuer.equals("717822F110 717822P212") || !jwtUtils.isUserTokenValid(token)){
             log.error("[SERVICE] Invalid issuer of JWT token");
             throw new InvalidJWTTokenException(Constant.INVALID_JWT_TOKEN);
         }
         String uniqueId = jwtUtils.extractValue(token,"uniqueId");
+        String userName = jwtUtils.extractUsername(token);
         if(!loginUtilsRepository.existsByUniqueId(uniqueId)){
             log.error("[SERVICE] invalid session");
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
@@ -186,7 +189,7 @@ public class EntryServiceImpl implements EntryService {
         if(!jwtUtils.extractValue(token,"roles").equals("USER")){
             throw new IllegalAccessException(ResponseStatus.UNAUTHORIZED.name());
         }
-        return uniqueId;
+        return List.of(userName, uniqueId);
     }
 
     @Override
@@ -254,10 +257,9 @@ public class EntryServiceImpl implements EntryService {
         log.info("[SERVICE] created user session - sessionId = {}",uniqueId);
 
         HashMap<String,Object> claims = new HashMap<>();
-        claims.put("roles","USER");
+        claims.put("roles", List.of("USER"));
         claims.put("uniqueId",uniqueId);
-        String token = jwtUtils.generateUserToken(claims, userName);
-
+        String token = jwtUtils.generateToken(claims, userName, false);
         log.info("[SERVICE] JWT token generated. Token = {}",token);
 
         return CommonResponse.builder()
@@ -270,9 +272,12 @@ public class EntryServiceImpl implements EntryService {
 
     @Override
     public CommonResponse userLogout(HttpServletResponse response, HttpServletRequest request) throws IllegalAccessException, InvalidJWTTokenException {
-        String uniqueId = authorizeToken(request.getHeader("Authorization"));
+        List<String> values = authorizeToken(request.getHeader("Authorization"));
+        String userName = values.get(0);
+        String uniqueId = values.get(1);
         log.debug("[SERVICE] JWT Token validated, deleting user session: {}", uniqueId);
         loginUtilsRepository.deleteByUniqueId(uniqueId);
+        jwtUtils.doUserJWTInvalidate(userName);
         try {
             log.debug("[SERVICE] Redirecting to Login page: http://localhost:3000/entry");
             response.sendRedirect("http://localhost:3000/entry");
@@ -282,7 +287,6 @@ public class EntryServiceImpl implements EntryService {
             return CommonResponse.builder()
                     .code(500)
                     .status(ResponseStatus.FAILED)
-                    .data(null)
                     .errorMessage(Constant.LOGOUT_ERROR)
                     .build();
         }

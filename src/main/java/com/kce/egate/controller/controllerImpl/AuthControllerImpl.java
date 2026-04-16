@@ -39,6 +39,7 @@ public class AuthControllerImpl implements AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(commonResponse);
         }
         try{
+            log.debug("[CONTROLLER] userSignIn: {}", request.getEmail());
             return ResponseEntity.status(HttpStatus.OK).body(userService.signInUser(request));
         }catch(Exception e) {
             log.error("** userSignIn: {}",e.getMessage());
@@ -115,6 +116,7 @@ public class AuthControllerImpl implements AuthController {
     }
 
     public CommonResponse setServerError(Exception e){
+        e.printStackTrace();
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setCode(500);
         commonResponse.setStatus(ResponseStatus.FAILED);

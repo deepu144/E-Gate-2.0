@@ -23,7 +23,7 @@ import java.time.LocalTime;
 @RequiredArgsConstructor
 public class AdminControllerImpl implements AdminController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminControllerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(AdminControllerImpl.class);
     private final AdminService adminService;
 
     @Override
@@ -41,9 +41,10 @@ public class AdminControllerImpl implements AdminController {
                                                       @RequestParam int size
     ){
         try {
+            log.debug("[CONTROLLER] getAllEntry method called");
             return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllEntry(rollNumber,fromDate,toDate,fromTime,toTime,batch,page,size,order,orderBy));
         }catch (Exception e){
-            LOGGER.error("** getAllEntry : {}",e.getMessage());
+            log.error("** getAllEntry : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -55,9 +56,10 @@ public class AdminControllerImpl implements AdminController {
                                                @RequestParam boolean isIncremental,
                                                @RequestParam("file") MultipartFile multipartFile) {
         try {
+            log.debug("[CONTROLLER] addBatch is called. batch {}, isIncremental {}", batch, isIncremental);
             return ResponseEntity.ok(adminService.addBatch(batch,multipartFile, isIncremental));
         }catch (Exception e) {
-            LOGGER.error("** addBatch : {}",e.getMessage());
+            log.error("** addBatch : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -67,9 +69,10 @@ public class AdminControllerImpl implements AdminController {
     @GetMapping("/batch")
     public ResponseEntity<CommonResponse> getAllBatch() {
         try {
+            log.debug("[CONTROLLER] getAllBatch is called");
             return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllBatch());
         }catch (Exception e){
-            LOGGER.error("** getAllBatch : {}",e.getMessage());
+            log.error("** getAllBatch : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -79,9 +82,10 @@ public class AdminControllerImpl implements AdminController {
     @DeleteMapping("/batch")
     public ResponseEntity<CommonResponse> deleteBatch(@RequestParam String batch){
         try {
+            log.debug("[CONTROLLER] deleteBatch is called. Batch {}", batch);
             return ResponseEntity.status(HttpStatus.OK).body(adminService.deleteBatch(batch));
         }catch (Exception e) {
-            LOGGER.error("** deleteBatch : {}",e.getMessage());
+            log.error("** deleteBatch : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -91,9 +95,10 @@ public class AdminControllerImpl implements AdminController {
     @PutMapping("/pwd/change")
     public ResponseEntity<CommonResponse> changeAdminPassword(@RequestBody PasswordChangeRequest passwordChangeRequest){
         try {
+            log.debug("[CONTROLLER] change password is called. Email {}", passwordChangeRequest.getEmail());
             return ResponseEntity.status(HttpStatus.OK).body(adminService.changeAdminPassword(passwordChangeRequest));
         }catch (Exception e){
-            LOGGER.error("** changeAdminPassword : {}",e.getMessage());
+            log.error("** changeAdminPassword : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -103,9 +108,10 @@ public class AdminControllerImpl implements AdminController {
     @PostMapping("/add")
     public ResponseEntity<CommonResponse> addAdmin(@RequestParam String email){
         try {
+            log.debug("[CONTROLLER] addAdmin is called.");
             return ResponseEntity.status(HttpStatus.OK).body(adminService.addAdmin(email));
         }catch (Exception e){
-            LOGGER.error("** addAdmin: {}",e.getMessage());
+            log.error("** addAdmin: {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -115,9 +121,10 @@ public class AdminControllerImpl implements AdminController {
     @GetMapping("/today/entry")
     public ResponseEntity<CommonResponse> getAllTodayEntry(@RequestParam int page ,@RequestParam int size){
         try {
+            log.debug("[CONTROLLER] getAllTodayEntry is called. Page {}, size {}", page, size);
             return ResponseEntity.status(HttpStatus.OK).body(adminService.getAllTodayEntry(page,size));
         }catch (Exception e){
-            LOGGER.error("** getAllEntry: {}",e.getMessage());
+            log.error("** getAllEntry: {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
@@ -127,14 +134,16 @@ public class AdminControllerImpl implements AdminController {
     @GetMapping("/today/utils")
     public ResponseEntity<CommonResponse> getTodayUtils(){
         try {
+            log.debug("[CONTROLLER] getTodayUtils is called.");
             return ResponseEntity.status(HttpStatus.OK).body(adminService.getTodayUtils());
         }catch (Exception e){
-            LOGGER.error("** getTodayOutCount : {}",e.getMessage());
+            log.error("** getTodayOutCount : {}",e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(setServerError(e));
         }
     }
 
     public CommonResponse setServerError(Exception e){
+        e.printStackTrace();
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setCode(500);
         commonResponse.setStatus(ResponseStatus.FAILED);

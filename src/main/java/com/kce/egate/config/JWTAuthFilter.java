@@ -37,13 +37,13 @@ public class JWTAuthFilter extends OncePerRequestFilter {
         }
         jwtToken = authHeader.substring(7);
         userEmail = jwtUtils.extractUsername(jwtToken);
-        issuer = jwtUtils.extractIssuer(jwtToken);
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailService.loadUserByUsername(userEmail);
             boolean isTokenValid = tokenRepository.findByToken(jwtToken)
                     .map(token -> !token.isExpired())
                     .orElse(false);
-            if(issuer!=null && issuer.equals("717822F110 717822P212")){
+
+            if (jwtUtils.isTokenValid(jwtToken, userDetails) && isTokenValid) {
                 SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
@@ -51,17 +51,8 @@ public class JWTAuthFilter extends OncePerRequestFilter {
                 token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 securityContext.setAuthentication(token);
                 SecurityContextHolder.setContext(securityContext);
-            }else{
-                if (jwtUtils.isTokenValid(jwtToken, userDetails) && isTokenValid) {
-                    SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
-                    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities()
-                    );
-                    token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    securityContext.setAuthentication(token);
-                    SecurityContextHolder.setContext(securityContext);
-                }
             }
+
         }
         filterChain.doFilter(request, response);
     }

@@ -18,6 +18,8 @@ import com.kce.egate.exceptions.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
     private final JWTUtils jwtUtils;
     private final TokenRepository tokenRepository;
     private final AdminsRepository adminsRepository;
@@ -43,35 +46,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CommonResponse signInUser(AuthenticationRequest authenticationRequest) throws IllegalAccessException, InvalidPassword {
-        List<String> admins = adminsRepository.findAll()
-                .parallelStream()
-                .map(Admins::getAdminEmail)
-                .toList();
-        if(!admins.contains(authenticationRequest.getEmail())){
+        log.info("[SERVICE] Authentication for Admin {} initiated", authenticationRequest.getEmail());
+        boolean isAdminExists = adminsRepository.existsByAdminEmail(authenticationRequest.getEmail());
+        if(!isAdminExists){
+            log.error("[SERVICE] Authentication Failed, {} is not a Admin user", authenticationRequest.getEmail());
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
         }
         Optional<User> userOptional = userRepository.findByEmail(authenticationRequest.getEmail());
-        String email;
-        String role;
+        String email = authenticationRequest.getEmail();;
         if(userOptional.isEmpty()){
+            log.debug("[SERVICE] Admin details not present in User Details, Adding Admin {} to UserDetails", email);
             User user = new User();
-            user.setEmail(authenticationRequest.getEmail());
+            user.setEmail(email);
             user.setPassword(passwordEncoder.encode("karpagam"));
-            user.setRole("ADMIN");
             userRepository.save(user);
-            email = user.getEmail();
-            role = user.getRole();
         }else{
+            log.debug("[SERVICE] Admin {} details Exists, Authenticating password", email);
             if(!passwordEncoder.matches(authenticationRequest.getPassword(), userOptional.get().getPassword())){
+                log.error("[SERVICE] Authentication Failed, Password is incorrect for {}", email);
                 throw new InvalidPassword(Constant.PASSWORD_INCORRECT);
             }
-            User user = userOptional.get();
-            email = user.getEmail();
-            role = user.getRole();
         }
         HashMap<String,Object> claims = new HashMap<>();
-        claims.put("roles",List.of(role));
-        String token = jwtUtils.generateToken(claims,email);
+        claims.put("roles",List.of("ADMIN"));
+        String token = jwtUtils.generateToken(claims, email, true);
         expireAndDeleteAllExistingToken(email);
         saveToken(token,email);
         return CommonResponse.builder()
@@ -83,12 +81,14 @@ public class UserServiceImpl implements UserService {
     }
 
     private void expireAndDeleteAllExistingToken(String email) {
+        log.debug("[SERVICE] deleting old Existing Token, Email {}", email);
         var oldTokens = tokenRepository.findByUserEmail(email);
         if(oldTokens.isEmpty()) return;
         oldTokens.forEach(token -> tokenRepository.deleteById(token.get_id()));
     }
 
     private void saveToken(String token, String email) {
+        log.debug("[SERVICE] saving JWT Token, Email {}", email);
         Token token1 = new Token();
         token1.setToken(token);
         token1.setUserEmail(email);
@@ -98,25 +98,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResponse oauth2Callback(String email,String name,String picture,String id,String role) {
-        var admins = adminsRepository.findAll()
-                .parallelStream()
-                .map(Admins::getAdminEmail)
-                .toList();
-        if(id==null || email==null || email.isBlank() || !admins.contains(email) || !userRepository.existsById(id)){
+    public CommonResponse oauth2Callback(String email, String name, String picture, String id, String role) {
+        log.debug("[SERVICE] OAuth2CallBack initiated");
+        boolean isAdmin = adminsRepository.existsByAdminEmail(email);
+        if(id==null || email==null || email.isBlank() || !isAdmin || !userRepository.existsById(id)){
+            log.error("[SERVICE] Provided Details are Invalid, id {}, email {}, isAdmin {}", id, email, isAdmin);
             return CommonResponse.builder()
                     .code(403)
                     .status(ResponseStatus.UNAUTHORIZED)
-                    .data(null)
                     .errorMessage(Constant.UNAUTHORIZED_ADMIN)
                     .build();
         }
         if(role.equalsIgnoreCase("admin")){
+            log.info("[SERVICE] User {} has been signed in, Creating Admin JWT Token", email);
             HashMap<String,Object> claims = new HashMap<>();
-            List<String> adminRoles = List.of("ADMIN");
-            claims.put("roles",adminRoles);
+            claims.put("roles",List.of("ADMIN"));
             expireAndDeleteAllExistingToken(email);
-            String token = jwtUtils.generateToken(claims,email);
+            String token = jwtUtils.generateToken(claims,email, true);
             saveToken(token, email);
             return CommonResponse.builder()
                     .code(200)
@@ -125,18 +123,22 @@ public class UserServiceImpl implements UserService {
                     .successMessage(Constant.SIGN_IN_SUCCESS)
                     .build();
         }else{
+            log.info("[SERVICE] User {} has been signed in, Creating User JWT Token", email);
             return entryService.checkAndGetUserToken(email);
         }
     }
 
     @Override
     public CommonResponse logout(HttpServletRequest request, HttpServletResponse response) {
+        log.info("[SERVICE] logout request initiated");
         final String authHeader = request.getHeader("Authorization");
         var jwtToken = authHeader.substring(7);
         var userEmail = jwtUtils.extractUsername(jwtToken);
+        log.debug("[SERVICE] Invalidating Token for {}", userEmail);
         tokenRepository.deleteTokensByUserEmail(userEmail);
         SecurityContextHolder.clearContext();
         try {
+            log.info("[SERVICE] User {} logged out, Redirecting to Login Page", userEmail);
             response.sendRedirect("http://localhost:3000/admin");
             return null;
         } catch (IOException e) {
@@ -150,14 +152,44 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CommonResponse forgotPassword(String email) throws UserNotFoundException {
+    public CommonResponse forgotPassword(String email) throws IllegalAccessException {
+        log.info("[SERVICE] forgot password initiated for Email {}", email);
+        boolean isAdmin = adminsRepository.existsByAdminEmail(email);
+        if(!isAdmin) {
+            log.error("[SERVICE] Authentication Failed, {} is not a Admin user", email);
+            throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
+        }
         Optional<User> userOptional = userRepository.findByEmail(email);
         if(userOptional.isEmpty()){
-            throw new UserNotFoundException(Constant.USER_NOT_FOUND);
+            log.error("[SERVICE] Contact Administrator, inconsistent found over an application");
+            throw new RuntimeException("Contact Administrator, inconsistent found over an application");
         }
-        EmailDetailRequest emailDetailRequest = new EmailDetailRequest();
+
         Integer otp = generateOtp();
-        String subject = "E-gate v2.0: Secure Password Change Request";
+        log.debug("[SERVICE] OTP generated Successfully");
+        long currentTimeMillis = System.currentTimeMillis();
+        long expireTimeMillis = currentTimeMillis + EXPIRE_TIME;
+        Optional<OtpInfo> otpInfoOptional = otpInfoRepository.findByEmail(email);
+        OtpInfo otpInfo;
+        if(otpInfoOptional.isPresent()){
+            log.debug("[SERVICE] Already OTP request Found, Updating Current generated OTP");
+            otpInfo = otpInfoOptional.get();
+            otpInfo.setCreatedAt(currentTimeMillis);
+            otpInfo.setExpireAt(expireTimeMillis);
+            otpInfo.setOtp(otp);
+            otpInfoRepository.save(otpInfo);
+        }else{
+            log.debug("[SERVICE] Creating OTP info");
+            otpInfo = new OtpInfo();
+            otpInfo.setOtp(otp);
+            otpInfo.setEmail(email);
+            otpInfo.setCreatedAt(currentTimeMillis);
+            otpInfo.setExpireAt(expireTimeMillis);
+            otpInfoRepository.save(otpInfo);
+        }
+
+        EmailDetailRequest emailDetailRequest = new EmailDetailRequest();
+        String subject = "E-gate v2.0: Secure Password Reset Request";
         String body = String.format("""
                 <!DOCTYPE html>
                        <html lang="en">
@@ -255,25 +287,11 @@ public class UserServiceImpl implements UserService {
         emailDetailRequest.setRecipient(email);
         emailDetailRequest.setSubject(subject);
         emailDetailRequest.setMsgBody(body);
-        emailUtils.sendMimeMessage(emailDetailRequest);
-        long currentTimeMillis = System.currentTimeMillis();
-        long expireTimeMillis = currentTimeMillis + EXPIRE_TIME;
-        Optional<OtpInfo> otpInfoOptional = otpInfoRepository.findByEmail(email);
-        OtpInfo otpInfo;
-        if(otpInfoOptional.isPresent()){
-            otpInfo = otpInfoOptional.get();
-            otpInfo.setCreatedAt(currentTimeMillis);
-            otpInfo.setExpireAt(expireTimeMillis);
-            otpInfo.setOtp(otp);
-            otpInfoRepository.save(otpInfo);
-        }else{
-            otpInfo = new OtpInfo();
-            otpInfo.setOtp(otp);
-            otpInfo.setEmail(email);
-            otpInfo.setCreatedAt(currentTimeMillis);
-            otpInfo.setExpireAt(expireTimeMillis);
-            otpInfoRepository.save(otpInfo);
-        }
+        log.info("[SERVICE] Sending Password Reset Email to User {}", email);
+        Thread.ofVirtual()
+                        .name("email-thread-"+email)
+                        .start(() -> emailUtils.sendMimeMessage(emailDetailRequest));
+
         return CommonResponse.builder()
                 .code(200)
                 .status(ResponseStatus.SUCCESS)
@@ -284,21 +302,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CommonResponse verifyOtp(VerifyOTPRequest request) throws UserNotFoundException, IllegalAccessException, InvalidAttributeValueException {
+        log.info("[SERVICE] Verify OTP request initiated");
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
         if(userOptional.isEmpty()){
+            log.error("[SERVICE] User not Found");
             throw new UserNotFoundException(Constant.USER_NOT_FOUND);
         }
         Optional<OtpInfo> otpInfoOptional = otpInfoRepository.findByEmail(request.getEmail());
         if(otpInfoOptional.isEmpty()){
+            log.error("[SERVICE] OTP not generated, Please Contact Administrator");
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
         }
         OtpInfo otpInfo = otpInfoOptional.get();
         if(!Objects.equals(otpInfo.getOtp(), request.getOtp())){
+            log.error("[SERVICE] Invalid OTP");
             throw new InvalidAttributeValueException(Constant.INVALID_OTP);
         }
         if(otpInfo.getExpireAt()<System.currentTimeMillis()){
+            log.error("[SERVICE] Expired OTP");
             otpInfoRepository.deleteById(otpInfo.get_id());
-            throw new InvalidAttributeValueException(Constant.INVALID_OTP);
+            throw new InvalidAttributeValueException(Constant.OTP_EXPIRED);
         }
         String uniqueId = UUID.randomUUID().toString();
         otpInfo.setUniqueId(uniqueId);
@@ -313,20 +336,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CommonResponse changePassword(String uniqueId, PasswordChangeOTPRequest request) throws IllegalAccessException, UserNotFoundException {
+        log.info("[SERVICE] changePassword initiated");
         Optional<OtpInfo> otpInfoOptional = otpInfoRepository.findByEmail(request.getEmail());
         if(otpInfoOptional.isEmpty()){
+            log.error("[SERVICE] OTP not verified");
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
         }
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
         if(userOptional.isEmpty()){
+            log.error("[SERVICE] User not Found");
             throw new UserNotFoundException(Constant.USER_NOT_FOUND);
         }
         if(!uniqueId.equals(otpInfoOptional.get().getUniqueId())){
+            log.error("[SERVICE] OTP not verified");
             throw new IllegalAccessException(Constant.ILLEGAL_ACCESS);
         }
         User user = userOptional.get();
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
+        log.info("[SERVICE] Password Changed Successfully");
         otpInfoRepository.deleteById(otpInfoOptional.get().get_id());
         EmailDetailRequest emailRequest = new EmailDetailRequest();
         String body = String.format(
@@ -428,8 +456,13 @@ public class UserServiceImpl implements UserService {
                 ,user.getEmail(), LocalDate.now()+" "+ LocalTime.now(),"mailto:kce.egate@gmail.com");
         emailRequest.setRecipient(user.getEmail());
         emailRequest.setMsgBody(body);
-        emailRequest.setSubject("E-gate 2.0: Your Password Has Been Successfully Updated");
-        emailUtils.sendMimeMessage(emailRequest);
+        emailRequest.setSubject("E-gate 2.0: Your Password has been Changed Successfully");
+        log.debug("[SERVICE] Sending password reset success email");
+
+        Thread.ofVirtual()
+                .name("email-thread-"+user.getEmail())
+                .start(() -> emailUtils.sendMimeMessage(emailRequest));
+
         return CommonResponse.builder()
                 .code(200)
                 .data(request.getEmail())
